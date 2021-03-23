@@ -4,5 +4,4 @@ from . import views
 
 urlpatterns = [
     path('', views.home, name = 'EMS-home'),
-    path('admin/', admin.site.urls),
 ]
