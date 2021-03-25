@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.db import connection,transaction
+from django.db import connection, transaction
 from django.db import connections
 from datetime import datetime
 
@@ -30,35 +30,46 @@ def signup(request):
             return render(request, 'user/signup.html', context)
         print(name, email, password, confirm_password)
         cursor = connections['default'].cursor()
-        cursor.execute("INSERT INTO user(name,email,password, DoB)  VALUES (%s, %s,%s,%s)", [name,email,password,date_of_birth])
-        return redirect('user:signin')
+        cursor.execute("INSERT INTO user(name,email,password, DoB)  VALUES (%s, %s,%s,%s)",
+                       [name, email, password, date_of_birth])
+        return redirect('user:sign-in')
 
     else:
         return render(request, 'user/signup.html')
 
 
 def signin(request):
-	context = {}
-	if request.method == 'POST':
-		email = request.POST["email"]
-		password = request.POST["password"]
-		with connection.cursor() as cursor:
-			cursor.execute("SELECT * from user WHERE email = %s AND password = %s", [email,password])
-			row = cursor.fetchone()
-			if len(row) == 0:
-				messages.error(request, f'User Not found! If you are new you may register first.')
-				context = {
-                'message': 'User Not found! If you are new you may register first.',
-                'type': 'error'
-            	}
-				return render(request, 'user/signup.html', context)
-			name = row[2]
-			messages.success(request, f'Welcome {name}! You can check your events here')
-			return redirect('home:EMS-home')
+    context = {}
+    if request.method == 'POST':
+        email = request.POST["email"]
+        password = request.POST["password"]
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * from user WHERE email = %s AND password = %s", [email, password])
+            row = cursor.fetchone()
+            if row is None:
+                messages.error(request, f'User Not found! If you are new you may register first.')
+                context = {
+                    'message': 'The email address or mobile number you entered is not connected to an account',
+                    'type': 'error'
+                }
+                return render(request, 'user/signin.html', context)
 
-	else: 
-		return render(request, 'user/signin.html')
+            request.session['user_id'] = row[0]  # kind of log in
+            return redirect('home:EMS-home')
 
-
+    else:
+        return render(request, 'user/signin.html')
 
 
+def logout(request):
+    if 'user_id' in request.session:
+        del request.session['user_id']
+        return redirect('home:EMS-home')
+    else:
+        return redirect('user:sign-in')
+
+
+def profile(request):
+    if 'user_id' in request.session:
+        return render(request, 'user/user_profile.html')
+    return redirect('user:sign-in')
