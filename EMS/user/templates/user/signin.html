@@ -1,7 +1,7 @@
 {% extends 'home/base.html' %}
 
 {% block content %}
-    <form class="" method="POST" action="{% url 'user:signin' %}" >
+    <form class="" method="POST" action="{% url 'user:sign-in' %}" >
         {% csrf_token %}
         <!-- component -->
         <div class="bg-grey-lighter min-h-screen flex flex-col">
@@ -10,7 +10,7 @@
                     <h1 class="mb-8 text-3xl text-center">Sign In</h1>
 
                     <input
-                            type="text"
+                            type="email"
                             class="block border border-grey-light w-full p-3 rounded mb-4"
                             name="email"
                             placeholder="Email" />
@@ -22,15 +22,15 @@
                             placeholder="Password" />
                     <button
                             type="submit"
-                            class="w-full text-center py-3 rounded bg-green text-black hover:bg-green-dark focus:outline-none my-1"
+                            class="text-white bg-green-500 border-0 py-2 px-6 focus:outline-none hover:bg-green-600 rounded "
                     >LogIn</button>
 
                 </div>
 
                 <div class="text-grey-dark mt-6">
                     Don't have an account?
-                    <a class="no-underline border-b border-blue text-blue" href="{%url 'user:signup' %}">
-                        Sign Up
+                    <a class="no-underline border-b border-blue" href="{%url 'user:signup' %}">
+                        <span class="text-blue">Sign Up</span>
                     </a>.
                 </div>
             </div>
