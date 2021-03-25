@@ -85,6 +85,7 @@ def profile(request):
                 [first_name, last_name, email, about, state, postal_address, street])
 
         # print(first_name, last_name, email)
+        
         with connection.cursor() as cursor:
             cursor.execute("SELECT * from user WHERE user_id = %s", [request.session['user_id']])
             row = cursor.fetchone()
@@ -99,7 +100,8 @@ def profile(request):
             'DoB': row[9],
             'street': row[5],
             'state': row[6],
-            'zip': row[7]
+            'zip': row[7],
+            'wallet_amount': row[8]
         }
         return render(request, 'user/user_profile.html', context)
     return redirect('user:sign-in')
