@@ -102,3 +102,6 @@ def profile(request):
 		}
 		return render(request, 'user/user_profile.html',context)
 	return redirect('user:sign-in')
+
+
+
