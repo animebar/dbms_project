@@ -1,4 +1,4 @@
-drop table user;
+DROP TABLE IF EXISTS user;
 CREATE TABLE user(
     user_id INT AUTO_INCREMENT,
     profile_pic BLOB,
@@ -16,3 +16,34 @@ CREATE TABLE user(
 );
 INSERT INTO user(first_name, last_name, email, password, DoB)
 VALUES ("Andrew", "NG", "andrew@gmail.com", "abcd", "2017-06-15");
+
+
+DROP TABLE IF EXISTS venue;
+create table venue(
+    venue_id INT AUTO_INCREMENT,
+    venue_name VARCHAR(20),
+    capacity INT,
+    availability BOOL,
+    street VARCHAR(20),
+    state VARCHAR(20),
+    zip VARCHAR(20),
+    PRIMARY KEY(venue_id)
+);
+
+
+DROP TABLE IF EXISTS events;
+create table events(
+    event_id INT AUTO_INCREMENT,
+    host_id INT,
+    event_name VARCHAR(20),
+    event_date DATE,
+    start_time TIME,
+    end_time TIME,
+    event_day VARCHAR(10),
+    venue_name VARCHAR(20),
+    venue_id INT,
+    max_capacity INT,
+    FOREIGN KEY (host_id) REFERENCES user(user_id),
+    FOREIGN KEY (venue_id) REFERENCES venue(venue_id),
+    PRIMARY KEY(event_id)
+);
