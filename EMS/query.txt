@@ -1,1 +1,18 @@
-a
+drop table user;
+CREATE TABLE user(
+    user_id INT AUTO_INCREMENT,
+    profile_pic BLOB,
+    password VARCHAR(30) not null,
+    first_name VARCHAR(30),
+    last_name VARCHAR(30),
+    street VARCHAR(30),
+    state VARCHAR(30),
+    zip VARCHAR(30),
+    wallet_amount DECIMAL(5,2),
+    DoB DATE NOT NULL,
+    email VARCHAR(30),
+    about VARCHAR(30),
+    PRIMARY KEY(user_id)
+);
+INSERT INTO user(first_name, last_name, email, password, DoB)
+VALUES ("Andrew", "NG", "andrew@gmail.com", "abcd", "2017-06-15");
