@@ -44,7 +44,8 @@ create table events(
     venue_id INT,
     max_capacity INT,
     description VARCHAR(300),
-    image BLOB;
+    image BLOB,
+    cost INT,
     FOREIGN KEY (host_id) REFERENCES user(user_id),
     FOREIGN KEY (venue_id) REFERENCES venue(venue_id),
     PRIMARY KEY(event_id)
