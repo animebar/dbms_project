@@ -8,7 +8,7 @@ CREATE TABLE user(
     street VARCHAR(30),
     state VARCHAR(30),
     zip VARCHAR(30),
-    wallet_amount DECIMAL(5,2),
+    wallet_amount DECIMAL(5,2) default 0,
     DoB DATE NOT NULL,
     email VARCHAR(30),
     about VARCHAR(30),
@@ -44,7 +44,8 @@ create table events(
     venue_id INT,
     max_capacity INT,
     description VARCHAR(300),
-    image BLOB;
+    image BLOB,
+    cost INT,
     FOREIGN KEY (host_id) REFERENCES user(user_id),
     FOREIGN KEY (venue_id) REFERENCES venue(venue_id),
     PRIMARY KEY(event_id)

@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.db import connection, transaction
 from django.db import connections
 from datetime import datetime
-
+import datetime
 # Create your views here.
 from django.http import HttpResponse
 
@@ -84,10 +84,12 @@ def profile(request):
                 "UPDATE user SET first_name = %s, last_name = %s, email = %s, about = %s, state = %s, zip = %s, street = %s",
                 [first_name, last_name, email, about, state, postal_address, street])
 
-        # print(first_name, last_name, email)
         with connection.cursor() as cursor:
             cursor.execute("SELECT * from user WHERE user_id = %s", [request.session['user_id']])
             row = cursor.fetchone()
+            cursor.execute("SELECT year(DOB) from user WHERE user_id = %s",[request.session['user_id']])
+            y = cursor.fetchone()
+        age = datetime.datetime.now().year - y[0]
         context = {
             'log_in': True,
             'first_name': row[3],
@@ -99,7 +101,9 @@ def profile(request):
             'DoB': row[9],
             'street': row[5],
             'state': row[6],
-            'zip': row[7]
+            'zip': row[7],
+            'wallet_amount': row[8],
+            'age': age
         }
         return render(request, 'user/user_profile.html', context)
     return redirect('user:sign-in')
