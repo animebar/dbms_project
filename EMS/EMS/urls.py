@@ -16,9 +16,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+app_name = 'events'
+
 urlpatterns = [
     path('home/', include('home.urls')),
     path('user/', include('user.urls')),
     path('admin/', admin.site.urls),
+    path('events/', include('events.urls'))
 
 ]
