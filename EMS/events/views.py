@@ -37,6 +37,31 @@ def view_event(request, id):
     return render(request, 'events/event.html', context)
 
 
+def add_venue(request):
+    if 'user_id' not in request.session:
+        messages.error(request, f'Need to Log in First')
+        return redirect('user:sign-in')
+    if request.method == "POST":
+        name = request.POST["venue_name"]
+        capacity = request.POST["capacity"]
+        state = request.POST["state"]
+        street = request.POST["street"]
+        pin = request.POST["zip"]
+
+        flag = False
+        try:
+            available = request.POST["available"]
+            flag = True
+        except:
+            flag = False
+
+        cursor = connections['default'].cursor()
+        cursor.execute(
+            "INSERT INTO venue (owner_id, venue_name, capacity, availability, street, state, zip) VALUE (%s, %s, %s, %s, %s, %s, %s)",
+            [request.session["user_id"], name, capacity, flag, street, state, pin])
+
+    return render(request, 'events/add_venue.html')
+
 # def book_event(request,id):
 
 
