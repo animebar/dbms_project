@@ -1,5 +1,5 @@
 use djangodatabase;
-select * from venue;
+DROP TABLE IF EXISTS booking; 
 DROP TABLE IF EXISTS events;
 DROP TABLE IF EXISTS venue;
 DROP TABLE IF EXISTS account_details;
@@ -78,7 +78,6 @@ INSERT INTO events (host_id, event_name, time_stamp, start_time, end_time, venue
 VALUES('1', 'Comedy Nights', '2021-03-27', '10:00', '12:00', 1, 420, 'something', 500);
 
 
-DROP TABLE IF EXISTS booking; 
 CREATE TABLE booking (
     user_id INT,
     event_id INT,
