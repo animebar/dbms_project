@@ -1,5 +1,8 @@
 use djangodatabase;
+<<<<<<< HEAD
 select * from venue;
+=======
+>>>>>>> 77f8f4fc3df0181b1e8112ccd41b60a17ee478a2
 DROP TABLE IF EXISTS booking; 
 DROP TABLE IF EXISTS events;
 DROP TABLE IF EXISTS venue;
