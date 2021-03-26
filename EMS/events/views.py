@@ -146,13 +146,15 @@ def book_event(request,id):
                 wallet_amount = row[8]
                 number_of_seats = request.POST['seats']
                 print(number_of_seats*5)
-                transaction_amount = int(number_of_seats)*5
+                
+                
                 
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT * from events WHERE event_id = %s", [id])
                     row = cursor.fetchone()
-
+                cost = row[10]
                 seats_left = row[7] 
+                transaction_amount = int(number_of_seats)*cost
                 if int(number_of_seats) > seats_left:
                     messages.error(request, f'Not enough seats left for the event!! ')
                     return redirect('events:view_event', id)
