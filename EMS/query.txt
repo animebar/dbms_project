@@ -1,4 +1,4 @@
-DROP TABLE IF EXISTS user;
+use djangodatabase;
 CREATE TABLE user(
     user_id INT AUTO_INCREMENT,
     profile_pic BLOB,
@@ -46,7 +46,7 @@ create table events(
     description VARCHAR(300),
     image BLOB,
     cost INT,
-    FOREIGN KEY (host_id) REFERENCES user(user_id),
-    FOREIGN KEY (venue_id) REFERENCES venue(venue_id),
+    FOREIGN KEY (host_id) REFERENCES user(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (venue_id) REFERENCES venue(venue_id) ON DELETE CASCADE,
     PRIMARY KEY(event_id)
 );
