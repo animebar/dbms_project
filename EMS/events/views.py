@@ -29,7 +29,8 @@ def view_events(request, id):
         'host_id': host_id,
         'description': description,
         'cost': cost,
-        'max_capacity': max_capacity
+        'max_capacity': max_capacity,
+        'event_day': event_day
     }
     return render(request, 'events/event.html',context)
 # Create your views here.
