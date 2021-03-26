@@ -1,6 +1,8 @@
 use djangodatabase;
+select * from venue;
 DROP TABLE IF EXISTS events;
 DROP TABLE IF EXISTS venue;
+DROP TABLE IF EXISTS account_details;
 DROP TABLE IF EXISTS user;
 CREATE TABLE user(
     user_id INT AUTO_INCREMENT,
@@ -20,20 +22,37 @@ CREATE TABLE user(
 INSERT INTO user(first_name, last_name, email, password, DoB)
 VALUES ("Andrew", "NG", "andrew@gmail.com", "abcd", "2017-06-15");
 
+CREATE TABLE account_details(
+    user_id INT,
+    account_number INT,
+    IFSC varchar(10),
+    PRIMARY KEY (user_id, account_number),
+    FOREIGN KEY (user_id) REFERENCES user(user_id)
+);
+
+INSERT INTO account_details VALUES (1,23,"SBIN001") ;
+
+
 create table venue(
     venue_id INT AUTO_INCREMENT,
+    owner_id INT,
     venue_name VARCHAR(20),
     capacity INT,
     availability BOOL,
     street VARCHAR(20),
     state VARCHAR(20),
     zip VARCHAR(20),
-    PRIMARY KEY(venue_id)
+    PRIMARY KEY(venue_id),
+    FOREIGN KEY (owner_id) REFERENCES user(user_id)
 );
 
+ 
+
 -- insert venue
+INSERT INTO venue (owner_id, venue_name, capacity, availability, street, state, zip)
+            VALUES (1, 'Netaji', 300, True, 'Near main building', 'WB', '721301');
 INSERT INTO venue (venue_name, capacity, availability, street, state, zip)
-            VALUES ('Kalidas', 420, True, 'Nalanda Street', 'WB', '721301');
+            VALUES ('Netaji', 300, True, 'Near main building', 'WB', '721301');
             
 create table events(
     event_id INT AUTO_INCREMENT,
@@ -51,6 +70,8 @@ create table events(
     FOREIGN KEY (venue_id) REFERENCES venue(venue_id) ON DELETE CASCADE,
     PRIMARY KEY(event_id)
 );
+
+ 
 
 -- Add a event
 INSERT INTO events (host_id, event_name, time_stamp, start_time, end_time, venue_id, max_capacity, description, cost)
