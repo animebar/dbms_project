@@ -30,7 +30,7 @@ def view_event(request, id):
     if 'user_id' in request.session:
         log_in = True
     context = {
-        'log_in': True,
+        'log_in': log_in,
         'event_name': event_name,
         'host_id': host_id,
         'description': description,
