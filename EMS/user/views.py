@@ -39,7 +39,9 @@ def signup(request):
 
 def signin(request):
     context = {}
-    if request.method == 'POST':
+    if 'user_id' in request.session:
+        return redirect('home:EMS-home')
+    elif request.method == 'POST':
         email = request.POST["email"]
         password = request.POST["password"]
         with connection.cursor() as cursor:
@@ -87,9 +89,14 @@ def profile(request):
         with connection.cursor() as cursor:
             cursor.execute("SELECT * from user WHERE user_id = %s", [request.session['user_id']])
             row = cursor.fetchone()
-            cursor.execute("SELECT year(DOB) from user WHERE user_id = %s",[request.session['user_id']])
+            cursor.execute("SELECT year(DOB) from user WHERE user_id = %s", [request.session['user_id']])
             y = cursor.fetchone()
+            cursor.execute("SELECT account_number, IFSC from account_details WHERE user_id = %s", [request.session['user_id']])
+            raw_account_details = cursor.fetchall()
         age = datetime.datetime.now().year - y[0]
+        account_details = [] #
+        for raw_account in raw_account_details:
+            account_details.append(raw_account)
         context = {
             'log_in': True,
             'first_name': row[3],
@@ -103,7 +110,20 @@ def profile(request):
             'state': row[6],
             'zip': row[7],
             'wallet_amount': row[8],
-            'age': age
+            'age': age,
+            'account_details': account_details
         }
         return render(request, 'user/user_profile.html', context)
     return redirect('user:sign-in')
+
+
+def add_money(request):
+    if 'user_id' not in request.session:
+        messages.error(request, f'Need to Log in First')
+        return redirect('user:sign-in')
+    if request.method == "POST":
+        amount = request.POST["amount"]
+        cursor = connections['default'].cursor()
+        cursor.execute("UPDATE user SET wallet_amount = wallet_amount + %s WHERE user_id = %s", [amount, request.session["user_id"]])
+    return redirect('user:profile')
+
