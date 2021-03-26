@@ -22,13 +22,15 @@ VALUES ("Andrew", "NG", "andrew@gmail.com", "abcd", "2017-06-15");
 
 create table venue(
     venue_id INT AUTO_INCREMENT,
+    owner_id INT,
     venue_name VARCHAR(20),
     capacity INT,
     availability BOOL,
     street VARCHAR(20),
     state VARCHAR(20),
     zip VARCHAR(20),
-    PRIMARY KEY(venue_id)
+    PRIMARY KEY(venue_id),
+    FOREIGN KEY (owner_id) REFERENCES user(user_id)
 );
 
 -- insert venue
@@ -55,3 +57,4 @@ create table events(
 -- Add a event
 INSERT INTO events (host_id, event_name, time_stamp, start_time, end_time, venue_id, max_capacity, description, cost)
 VALUES('1', 'Comedy Nights', '2021-03-27', '10:00', '12:00', 1, 420, 'something', 500);
+
