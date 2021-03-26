@@ -8,7 +8,7 @@ from datetime import datetime
 from django.urls import reverse
 
 
-def view_events(request, id):
+def view_event(request, id):
     context = {}
     with connection.cursor() as cursor:
         cursor.execute("SELECT * from events WHERE event_id = %s", [id])
@@ -22,10 +22,10 @@ def view_events(request, id):
             return redirect('home:EMS-home')
     event_name = row[2]
     host_id = row[1]
-    description = row[10]
-    cost = row[12]
-    max_capacity = row[9]
-    event_day = row[6]
+    description = row[8]
+    cost = row[10]
+    max_capacity = row[7]
+    event_date = row[3]
     context = {
         'event_name': event_name,
         'host_id': host_id,
@@ -35,4 +35,9 @@ def view_events(request, id):
         'event_day': event_day
     }
     return render(request, 'events/event.html', context)
+
+
+def book_event(request,id):
+
+
 # Create your views here.
