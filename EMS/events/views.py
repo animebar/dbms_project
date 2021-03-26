@@ -5,6 +5,8 @@ from django.db import connection, transaction
 from django.db import connections
 from datetime import datetime
 
+from django.urls import reverse
+
 
 def view_events(request, id):
     context = {}
@@ -17,7 +19,7 @@ def view_events(request, id):
                 'message': 'Event does not exist',
                 'type': 'error'
             }
-            return render(request, 'home/home.html', context)
+            return redirect('home:EMS-home')
     event_name = row[2]
     host_id = row[1]
     description = row[10]
@@ -32,5 +34,5 @@ def view_events(request, id):
         'max_capacity': max_capacity,
         'event_day': event_day
     }
-    return render(request, 'events/event.html',context)
+    return render(request, 'events/event.html', context)
 # Create your views here.
