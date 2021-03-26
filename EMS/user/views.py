@@ -117,6 +117,31 @@ def profile(request):
     return redirect('user:sign-in')
 
 
+def view_profile(request,id):
+    log_in = False
+    if 'user_id' in request.session:
+        log_in = True
+
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT * from user WHERE user_id = %s", [request.session['user_id']])
+        row = cursor.fetchone()
+        cursor.execute("SELECT year(DOB) from user WHERE user_id = %s",[request.session['user_id']])
+        y = cursor.fetchone()
+    age = datetime.datetime.now().year - y[0]
+    context = {
+        'log_in': log_in,
+        'first_name': row[3],
+        'last_name': row[4],
+        'profile_pic': row[1],
+        'email': row[10],
+        'about': row[11],
+        'street': row[5],
+        'state': row[6],
+        'zip': row[7],
+        'age': age
+    }
+    return render(request, 'user/view_profile.html', context)
+
 def add_money(request):
     if 'user_id' not in request.session:
         messages.error(request, f'Need to Log in First')
