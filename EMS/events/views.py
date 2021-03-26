@@ -32,12 +32,12 @@ def view_event(request, id):
         'description': description,
         'cost': cost,
         'max_capacity': max_capacity,
-        'event_day': event_day
+        'event_date': event_date
     }
     return render(request, 'events/event.html', context)
 
 
-def book_event(request,id):
+# def book_event(request,id):
 
 
 # Create your views here.
