@@ -123,9 +123,9 @@ def view_profile(request,id):
         log_in = True
 
     with connection.cursor() as cursor:
-        cursor.execute("SELECT * from user WHERE user_id = %s", [request.session['user_id']])
+        cursor.execute("SELECT * from user WHERE user_id = %s", [id])
         row = cursor.fetchone()
-        cursor.execute("SELECT year(DOB) from user WHERE user_id = %s",[request.session['user_id']])
+        cursor.execute("SELECT year(DOB) from user WHERE user_id = %s",[id])
         y = cursor.fetchone()
     age = datetime.datetime.now().year - y[0]
     context = {
