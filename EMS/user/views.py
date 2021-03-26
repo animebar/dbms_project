@@ -39,7 +39,9 @@ def signup(request):
 
 def signin(request):
     context = {}
-    if request.method == 'POST':
+    if 'user_id' in request.session:
+        return redirect('home:EMS-home')
+    elif request.method == 'POST':
         email = request.POST["email"]
         password = request.POST["password"]
         with connection.cursor() as cursor:
