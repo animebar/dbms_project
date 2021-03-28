@@ -9,6 +9,44 @@ from django.urls import reverse
 
 
 def view_event(request, id):
+    all_tags=[]
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT tag_description from tags WHERE event_id = %s", [id])
+        row = cursor.fetchall()
+        for r in row:
+            all_tags.append(str(r))
+
+    for i in range(len(all_tags)):
+        # print(all_tags[i])
+        all_tags[i]=all_tags[i].strip('(')
+        all_tags[i]=all_tags[i].strip(')')
+        all_tags[i]=all_tags[i].strip(',')
+        s="'"
+        all_tags[i]=all_tags[i].strip(s)
+    event_ids = set()
+    for t in all_tags:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT event_id from tags WHERE tag_description = %s", [t])
+            row = cursor.fetchall()
+        for r in row:
+            s = str(r)
+            s = s.strip('(')
+            s = s.strip(')')
+            s = s.strip(',')
+            k="'"
+            s = s.strip(k)
+            event_ids.add(s)
+    event_ids.remove(str(id))
+    extra_event_descs = []
+    extra_event_names = []
+    extra_event_ids = []
+    for event_id in event_ids:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * from events WHERE event_id = %s", [event_id])
+            row = cursor.fetchone()
+            extra_event_ids.append(row[0])
+            extra_event_descs.append(row[8])
+            extra_event_names.append(row[2])
     context = {}
     with connection.cursor() as cursor:
         cursor.execute("SELECT * from events WHERE event_id = %s", [id])
@@ -29,6 +67,14 @@ def view_event(request, id):
     log_in = False
     if 'user_id' in request.session:
         log_in = True
+        
+    extra_events = []
+    for i in range(len(extra_event_names)):
+        temp = []
+        temp.append(extra_event_names[i])
+        temp.append(extra_event_descs[i])
+        temp.append(extra_event_ids[i])
+        extra_events.append(temp)
     context = {
         'log_in': log_in,
         'event_name': event_name,
@@ -37,7 +83,9 @@ def view_event(request, id):
         'cost': cost,
         'max_capacity': max_capacity,
         'event_date': event_date,
-        'id': id
+        'id': id,
+        'all_tags': all_tags,
+        'extra_event' : extra_events
     }
     return render(request, 'events/event.html', context)
 
@@ -89,7 +137,7 @@ def host_event(request):
                 cursor = connections['default'].cursor()
                 cursor.execute("INSERT INTO tags(event_id, tag_description)  VALUES (%s, %s)",
                 [event_id,tag])
-            messages.success(request,f'Hogaya')
+            messages.success(request,f'Your event has been successfully created')
             return redirect('home:EMS-home')
         else:
             cursor = connections['default'].cursor()
@@ -147,11 +195,12 @@ def host_event(request):
 
 
 def book_event(request, id):
+    
     if 'user_id' in request.session:
         if request.method == 'POST':
             is_yes = request.POST['btn']
-            print(is_yes)
             if is_yes == "CONFIRM!":
+                
                 user_id = request.session['user_id']
                 with connection.cursor() as cursor:
                     cursor.execute(
