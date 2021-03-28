@@ -11,4 +11,5 @@ urlpatterns = [
     path('profile/', views.profile, name='profile'),
     path('view/profile/id=<id>/', views.view_profile, name='view_profile'),
     path('add/money/', views.add_money, name='add_money'),
+    path('view/transactions/', views.view_transactions, name = 'transactions'),
 ]
