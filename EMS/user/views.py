@@ -95,6 +95,13 @@ def profile(request):
             raw_account_details = cursor.fetchall()
         age = datetime.datetime.now().year - y[0]
         account_details = [] #
+
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM transactions WHERE user_id = %s", [request.session['user_id']])
+            row_t = cursor.fetchall()
+
+        transactions = len(row_t)
+
         for raw_account in raw_account_details:
             account_details.append(raw_account)
         context = {
@@ -111,7 +118,8 @@ def profile(request):
             'zip': row[7],
             'wallet_amount': row[8],
             'age': age,
-            'account_details': account_details
+            'account_details': account_details,
+            'transactions':transactions,
         }
         return render(request, 'user/user_profile.html', context)
     return redirect('user:sign-in')
@@ -152,3 +160,33 @@ def add_money(request):
         cursor.execute("UPDATE user SET wallet_amount = wallet_amount + %s WHERE user_id = %s", [amount, request.session["user_id"]])
     return redirect('user:profile')
 
+
+def view_transactions(request):
+    if 'user_id' not in request.session:
+        messages.error(request, f'Please login to view your transactions')
+        return redirect('user:sign-in')
+
+    user_id = request.session['user_id']
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT * FROM transactions WHERE user_id = %s", [user_id])
+        row = cursor.fetchall()
+
+    transactions_ = []
+    for i in range(len(row)):
+        event_id = row[i][1]
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM events WHERE event_id = %s", [event_id])
+            row_i = cursor.fetchone()
+            event_i = []
+            event_i.append(event_id) #event id
+            event_i.append(row_i[2]) #event name
+            event_i.append(row_i[8]) #event description
+            event_i.append(row_i[3]) #event start time
+            event_i.append(row[i][2]) # time of booking 
+            transactions_.append(event_i)
+
+    context = {
+        'log_in' :True,
+        'transactions': transactions_,
+    }
+    return render(request, 'user/transactions.html', context)
