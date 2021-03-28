@@ -1,6 +1,7 @@
 use djangodatabase;
 DROP TABLE IF EXISTS tags;
 DROP TABLE IF EXISTS booking; 
+DROP TABLE IF EXISTS transactions;
 DROP TABLE IF EXISTS events;
 DROP TABLE IF EXISTS venue;
 DROP TABLE IF EXISTS account_details;
@@ -96,3 +97,13 @@ CREATE TABLE tags(
     PRIMARY KEY (event_id,tag_description)
 );
 
+
+
+CREATE TABLE transactions(
+    user_id INT,
+    event_id INT,
+    time_of_transaction DATETIME,
+    PRIMARY KEY (user_id , event_id, time_of_transaction),
+    FOREIGN KEY (user_id) REFERENCES user(user_id),
+    FOREIGN KEY (event_id) REFERENCES events(event_id)
+);  

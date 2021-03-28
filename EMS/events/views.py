@@ -159,8 +159,9 @@ def book_event(request, id):
                     row = cursor.fetchone()
                 wallet_amount = row[8]
                 number_of_seats = request.POST['seats']
-                print(number_of_seats*5)
-
+                
+                
+                time = datetime.now()
                 with connection.cursor() as cursor:
                     cursor.execute(
                         "SELECT * from events WHERE event_id = %s", [id])
@@ -180,6 +181,11 @@ def book_event(request, id):
 
                 else:
                     cursor = connections['default'].cursor()
+
+                    cursor.execute("UPDATE user SET wallet_amount = wallet_amount - %s WHERE user_id = %s" ,[transaction_amount, user_id])
+                    cursor.execute("INSERT INTO booking(user_id, event_id,number_of_seats) VALUES(%s,%s,%s)", [user_id, id, number_of_seats])
+                    cursor.execute("UPDATE events SET max_capacity = max_capacity - %s WHERE event_id = %s" ,[number_of_seats, id])
+                    cursor.execute("INSERT INTO transactions(user_id, event_id, time_of_transaction) VALUES(%s,%s,%s)", [user_id, id, time])
                     cursor.execute(
                         "UPDATE user SET wallet_amount = wallet_amount - %s WHERE user_id = %s", [transaction_amount, user_id])
                     cursor.execute("INSERT INTO booking(user_id, event_id,number_of_seats) VALUES(%s,%s,%s)", [
