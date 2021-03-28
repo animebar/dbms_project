@@ -88,3 +88,23 @@ CREATE TABLE booking (
 
 );
 
+DROP TABLE IF EXISTS reviews;
+CREATE TABLE reviews (
+	user_id int,
+    event_id int,
+    review varchar(300),
+    PRIMARY KEY(user_id, event_id),
+    FOREIGN KEY(user_id) REFERENCES user(user_id),
+	FOREIGN KEY(event_id) REFERENCES events(event_id)
+
+);
+
+DROP TABLE IF EXISTS cart;
+CREATE TABLE cart(
+	user_id int, 
+    event_id int,
+    PRIMARY KEY(user_id, event_id),
+    FOREIGN KEY(user_id) REFERENCES user(user_id),
+    FOREIGN KEY(event_id) REFERENCES events(event_id)
+);
+
