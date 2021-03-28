@@ -1,4 +1,5 @@
 use djangodatabase;
+
 DROP TABLE IF EXISTS booking; 
 DROP TABLE IF EXISTS events;
 DROP TABLE IF EXISTS venue;
@@ -86,3 +87,4 @@ CREATE TABLE booking (
     FOREIGN KEY (event_id) REFERENCES events(event_id)
 
 );
+
