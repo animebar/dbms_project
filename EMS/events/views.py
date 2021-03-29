@@ -269,13 +269,6 @@ def book_event(request, id):
                                    [number_of_seats, id])
                     cursor.execute("INSERT INTO transactions(user_id, event_id, time_of_transaction) VALUES(%s,%s,%s)",
                                    [user_id, id, time])
-                    cursor.execute(
-                        "UPDATE user SET wallet_amount = wallet_amount - %s WHERE user_id = %s",
-                        [transaction_amount, user_id])
-                    cursor.execute("INSERT INTO booking(user_id, event_id,number_of_seats) VALUES(%s,%s,%s)", [
-                        user_id, id, number_of_seats])
-                    cursor.execute(
-                        "UPDATE events SET max_capacity = max_capacity - %s WHERE event_id = %s", [number_of_seats, id])
 
                     messages.success(request, f'Your ticket is Booked')
 
@@ -414,10 +407,17 @@ def increase_cart(request, id):
     if 'user_id' not in request.session:
         messages.error(request, f'You Need to be signed for removing into the cart')
         return redirect('home:EMS-home')
+
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT * FROM events WHERE event_id = %s",
+                       [id])
+        event = cursor.fetchone()
+
+    seats_left = event[7]
     cursor = connections['default'].cursor()
     cursor.execute(
-        "UPDATE cart SET seat_count= seat_count + 1  WHERE user_id=%s AND event_id=%s",
-        [request.session["user_id"], id])
+        "UPDATE cart SET seat_count= seat_count + 1  WHERE user_id=%s AND event_id=%s AND seat_count <= %s",
+        [request.session["user_id"], id, seats_left])
     return redirect('user:cart_info')
 
 

@@ -6,7 +6,8 @@
     <title>
 
     </title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="{% static 'user/user_profile.css' %}">
 </head>
@@ -27,7 +28,7 @@
                             <div class="media align-items-center">
                                 <span class="avatar avatar-sm rounded-circle">
                                     <img alt="Image placeholder"
-                                        src="{{ uploaded_image_url }}">
+                                        src="{{  uploaded_image_url }}">
                                 </span>
                                 <div class="media-body ml-2 d-none d-lg-block">
                                     <span class="mb-0 text-sm  font-weight-bold">
@@ -68,10 +69,8 @@
                             <div class="col-lg-3 order-lg-2">
                                 <div class="card-profile-image">
                                     <a href="#">
-                                        
-                                            <img src="{{ uploaded_image_url }}" class="rounded-circle">
-                            
-                                        
+                                        <img src="{{uploaded_image_url}}"
+                                            class="rounded-circle">
                                     </a>
                                 </div>
                             </div>
@@ -91,14 +90,15 @@
                                             <span class="description">Wallet Amount</span>
                                         </div>
                                         <div>
-                                            <span class="heading">10</span>
+                                            <span class="heading">{{ cart_count }}</span>
                                             <a href="{% url 'user:cart_info' %}">
                                                 <span class="description">Cart Info</span>
                                             </a>
                                         </div>
                                         <div>
                                             <span class="heading">{{transactions}}</span>
-                                            <span class="description"><a href = "{%url 'user:transactions'%}">Transactions</a></span>
+                                            <span class="description"><a
+                                                    href="{%url 'user:transactions'%}">Transactions</a></span>
                                         </div>
                                     </div>
                                 </div>
@@ -111,14 +111,16 @@
                             </h3>
                             <hr class="my-4">
                             <p>{{ about }}</p>
-                            <p><button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal">
-                                Add Money
-                            </button></p>
+                            <p><button type="button" class="btn btn-primary" data-toggle="modal"
+                                    data-target="#exampleModal">
+                                    Add Money
+                                </button></p>
                         </div>
-                        
-                        
 
-                        <div class="modal" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+
+
+                        <div class="modal" id="exampleModal" tabindex="-1" role="dialog"
+                            aria-labelledby="exampleModalLabel" aria-hidden="true">
                             <div class="modal-dialog" role="document">
                                 <div class="modal-content">
                                     <div class="modal-header">
@@ -128,25 +130,38 @@
                                         </button>
                                     </div>
                                     <div class="modal-body">
-                                        <form method="POST", action="{% url 'user:add_money' %}" enctype="multipart/form-data">
+                                        <form method="POST" , action="{% url 'user:add_money' %}">
                                             {% csrf_token %}
-                                            <label for="">Select The Bank Account</label>
+                                            <label for="">Bank Account</label>
                                             {% for account in account_details %}
 
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault{{ forloop.counter }}" checked>
-                                                    <label class="form-check-label" for="flexRadioDefault{{ forloop.counter }}">
-                                                        {{ account.0 }}, {{ account.1 }}
-                                                    </label>
-                                                </div>
-
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="flexRadioDefault"
+                                                    id="flexRadioDefault{{ forloop.counter }}" checked>
+                                                <label class="form-check-label"
+                                                    for="flexRadioDefault{{ forloop.counter }}">
+                                                    <b>No:</b> {{ account.0 }}, <b>IFSC:</b> {{ account.1 }}
+                                                </label>
+                                            </div>
                                             {% endfor %}
+
                                             <br>
                                             <div class="form-group">
                                                 <label for="">Amount in INR</label>
-                                                <input type="number" class="form-control" id="" placeholder="Amount" name = "amount" required>
+                                                <input type="number" class="form-control" id="" placeholder="Amount"
+                                                    name="amount" required>
                                             </div>
+                                            {% if account_present %}
                                             <button type="submit" class="btn btn-primary">Submit</button>
+                                            {% else %}
+                                            <button type="" class="btn btn-secondary" disabled>Submit</button>
+                                            {% endif %}
+                                            <button type="button" class="btn btn-primary" data-toggle="modal"
+                                                data-target="#exampleModalCenter">
+                                                <a href="{% url 'user:add_account' %}" style="color: white">
+                                                    Add Account
+                                                </a>
+                                            </button>
                                         </form>
                                     </div>
                                     <div class="modal-footer">
@@ -155,6 +170,8 @@
                                 </div>
                             </div>
                         </div>
+
+
                     </div>
                 </div>
                 <div class="col-xl-8 order-xl-1">
@@ -209,23 +226,24 @@
                                             <div class="form-group">
                                                 <label class="form-control-label" for="input-email">Phone Number</label>
                                                 <input type="tel" id="input-tel"
-                                                    class="form-control form-control-alternative" placeholder="Phone Number"
-                                                    value="{{phone_number}}" name="phone_number">
+                                                    class="form-control form-control-alternative"
+                                                    placeholder="Phone Number" value="{{phone_number}}"
+                                                    name="phone_number">
                                             </div>
                                         </div>
                                         <div class="col-lg-6">
                                             <div class="form-group">
                                                 <label class="form-control-label" for="input-email">Country Code</label>
                                                 <input type="text" id="input-tel"
-                                                    class="form-control form-control-alternative" placeholder="Country Code"
-                                                    value="{{country_code}}" name="country_code">
+                                                    class="form-control form-control-alternative"
+                                                    placeholder="Country Code" value="{{country_code}}"
+                                                    name="country_code">
                                             </div>
                                         </div>
                                         <div class="col-lg-6">
                                             <div class="form-group">
                                                 <label class="form-control-label" for="input-email">Image</label>
-                                                <input class="form-control form-control-alternative"  type="file" id="img" name="img" accept="image/*">
-                                    
+                                                <input type="file" id="img" name="img" accept="image/*">
                                             </div>
                                         </div>
                                     </div>
@@ -301,11 +319,17 @@
             </div>
         </div>
 
-    </div>
-</footer>
-<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+        </div>
+    </footer>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+        integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
 </body>
 
 </html>
