@@ -13,5 +13,7 @@ urlpatterns = [
     path('add/money/', views.add_money, name='add_money'),
     path('view/transactions/', views.view_transactions, name='transactions'),
     path('view/cart/user_id/', views.cart_info, name='cart_info'),
-    path('add/new/account/', views.add_account, name='add_account')
+    path('add/new/account/', views.add_account, name='add_account'),
+    path('add/code/', views.PromoCode, name = 'offers'),
+    path('cart/checkout/', views.Checkout, name = 'Checkout'),
 ]
