@@ -14,7 +14,6 @@ def index(request):
 
 
 def signup(request):
-    context = {}
     if request.method == 'POST':
         first_name = request.POST["first_name"]
         last_name = request.POST["last_name"]
@@ -38,7 +37,6 @@ def signup(request):
 
 
 def signin(request):
-    context = {}
     if 'user_id' in request.session:
         return redirect('home:EMS-home')
     elif request.method == 'POST':
@@ -89,17 +87,20 @@ def profile(request):
                 "UPDATE user SET first_name = %s, last_name = %s, email = %s, about = %s, state = %s, zip = %s, street = %s WHERE user_id = %s",
                 [first_name, last_name, email, about, state, postal_address, street, user_id])
             try:
-                cursor.execute("INSERT INTO phone_number(user_id, country_code, phone_number) VALUES(%s,%s,%s)", [user_id, country_code, phone_number, user_id, country_code, phone_number])
+                cursor.execute("INSERT INTO phone_number(user_id, country_code, phone_number) VALUES(%s,%s,%s)",
+                               [user_id, country_code, phone_number, user_id, country_code, phone_number])
             except:
                 None
 
-
         with connection.cursor() as cursor:
-            cursor.execute("SELECT * from user WHERE user_id = %s", [request.session['user_id']])
+            cursor.execute("SELECT * FROM cart WHERE user_id = %s", [request.session['user_id']])
+            row = cursor.fetchall();
+            cart_count = len(row)
+            cursor.execute("SELECT * FROM user WHERE user_id = %s", [request.session['user_id']])
             row = cursor.fetchone()
-            cursor.execute("SELECT year(DOB) from user WHERE user_id = %s", [request.session['user_id']])
+            cursor.execute("SELECT year(DOB) FROM user WHERE user_id = %s", [request.session['user_id']])
             y = cursor.fetchone()
-            cursor.execute("SELECT account_number, IFSC from account_details WHERE user_id = %s",
+            cursor.execute("SELECT account_number, IFSC FROM account_details WHERE user_id = %s",
                            [request.session['user_id']])
             raw_account_details = cursor.fetchall()
         age = datetime.datetime.now().year - y[0]
@@ -113,13 +114,18 @@ def profile(request):
 
         with connection.cursor() as cursor:
             cursor.execute("SELECT * FROM phone_number WHERE user_id = %s", [request.session['user_id']])
-            row_p = cursor.fetchone()        
-        
+            row_p = cursor.fetchone()
+
         phone_number = None
         if row_p:
             phone_number = row_p[2]
         for raw_account in raw_account_details:
             account_details.append(raw_account)
+
+        account_present = False
+        if len(account_details):
+            account_present = True
+
         context = {
             'log_in': True,
             'first_name': row[3],
@@ -134,8 +140,10 @@ def profile(request):
             'zip': row[7],
             'age': age,
             'account_details': account_details,
-            'transactions':transactions,
-            'phone_number':phone_number,
+            'transactions': transactions,
+            'phone_number': phone_number,
+            'account_present': account_present,
+            'cart_count': cart_count,
         }
         return render(request, 'user/user_profile.html', context)
     return redirect('user:sign-in')
@@ -216,37 +224,50 @@ def cart_info(request):
         if 'code' in request.session:
             promo_code = request.session['code']
 
-
         discount = 0
 
         if 'discount' in request.session:
             discount = request.session['discount']
 
         print('discount:' + str(discount) + '\n')
-        discount = discount/100
+        discount = discount / 100
         processed_cart = []
         total_cost = 0
-        total_count = 0
         for cart in cart_details:
             cursor.execute("SELECT event_name, cost, description FROM events WHERE event_id=%s", [cart[1]])
             event = cursor.fetchone()
             processed_cart.append(
-                (event[0], event[1], cart[2], event[1] * cart[2], event[2][:10], cart[1]))  # name, cost, seat_count, total_per_event, description[:10],
+                (event[0], event[1], cart[2], event[1] * cart[2], event[2][:10],
+                 cart[1]))  # name, cost, seat_count, total_per_event, description[:10],
             print((event[0], event[1], cart[2], event[1] * cart[2], event[2][:10], cart[1]))
             total_cost = total_cost + event[1] * cart[2]
-            
+
         print('total cost' + str(total_cost) + '\n')
-        total_cost = (1 - discount)*total_cost
+        total_cost = (1 - discount) * total_cost
 
         context = {
-            'log_in':True,
+            'log_in': True,
             'cart_details': processed_cart,
             'total_cost': total_cost,
             'total_count': len(processed_cart),
-            'promo_code':promo_code,
+            'promo_code': promo_code,
         }
     return render(request, 'user/cart.html', context)
 
+
+def add_account(request):
+    if 'user_id' not in request.session:
+        messages.error(request, f'Need to be signed for adding Bank Account')
+        return redirect('home:EMS-home')
+    if request.method == "POST":
+        account_number = request.POST["account_number"]
+        IFSC = request.POST["IFSC"]
+        print(account_number, IFSC)
+        cursor = connections['default'].cursor()
+        cursor.execute("INSERT INTO account_details (user_id, account_number, IFSC) VALUES (%s, %s, %s)",
+                       [request.session["user_id"], account_number, IFSC])
+        return redirect('user:profile')
+    return render(request, 'user/add_account.html')
 
 
 def PromoCode(request):
@@ -255,14 +276,13 @@ def PromoCode(request):
         messages.error(request, f'Sign in to view your cart')
         return redirect('user:sign-in')
 
-
     code = request.POST['code']
     request.session['code'] = code
     with connection.cursor() as cursor:
         cursor.execute("SELECT * FROM offers WHERE promo_code = %s", [code])
         offer = cursor.fetchone()
 
-    if offer == None:
+    if offer is None:
         messages.error(request, f'invalid promo code')
         return redirect('user:cart_info')
 
@@ -272,8 +292,6 @@ def PromoCode(request):
     if time > end_time or time < start_time:
         messages.error(request, f'invalid promo code')
         return redirect('user:cart_info')
-    
-
 
     discount = offer[2]
     request.session['discount'] = discount
@@ -294,7 +312,7 @@ def Checkout(request):
     discount = 0
     if 'discount' in request.session:
         discount = request.session['discount']
-    discount = discount/100
+    discount = discount / 100
     total_cost = 0
     total_count = 0
     with connection.cursor() as cursor:
@@ -303,11 +321,11 @@ def Checkout(request):
             cursor.execute("SELECT event_name, cost, description FROM events WHERE event_id=%s", [cart[1]])
             event = cursor.fetchone()
             processed_cart.append(
-                (event[0], event[1], cart[2], event[1] * cart[2], event[2][:10], cart[1]))  # name, cost, seat_count, total_per_event, description[:10],
+                (event[0], event[1], cart[2], event[1] * cart[2], event[2][:10],
+                 cart[1]))  # name, cost, seat_count, total_per_event, description[:10],
             print((event[0], event[1], cart[2], event[1] * cart[2], event[2][:10], cart[1]))
         total_cost = total_cost + event[1] * cart[2]
-        total_cost = (1 - discount)*total_cost
-
+        total_cost = (1 - discount) * total_cost
 
     user_id = request.session['user_id']
     with connection.cursor() as cursor:
@@ -323,8 +341,7 @@ def Checkout(request):
     with connection.cursor() as cursor1:
         for event in processed_cart:
             message = 'Your request is booked for event' + event[0]
-            
-            
+
             cursor1.execute("SELECT max_capacity FROM events WHERE event_id = %s", [event[5]])
             seats_left = cursor1.fetchone()
             number_of_seats = event[2]
@@ -334,27 +351,28 @@ def Checkout(request):
                 messages.error(request, message)
                 continue
             cursor = connections['default'].cursor()
-            print ('amount = %d\n', event[3])
-            amt = event[3]*(1 - discount)
-            cursor.execute("UPDATE user SET wallet_amount = wallet_amount - %s WHERE user_id = %s",[amt, user_id])
-            
+            print('amount = %d\n', event[3])
+            amt = event[3] * (1 - discount)
+            cursor.execute("UPDATE user SET wallet_amount = wallet_amount - %s WHERE user_id = %s", [amt, user_id])
+
             cursor1.execute("SELECT * FROM booking WHERE user_id = %s and event_id = %s", [user_id, event[5]])
             row = cursor1.fetchone()
             if row is None:
-                cursor.execute("INSERT INTO booking(user_id, event_id,number_of_seats) VALUES(%s,%s,%s)",[user_id, event[5], number_of_seats])
+                cursor.execute("INSERT INTO booking(user_id, event_id,number_of_seats) VALUES(%s,%s,%s)",
+                               [user_id, event[5], number_of_seats])
             else:
-                cursor.execute("UPDATE booking SET number_of_seats = number_of_seats + %s WHERE user_id = %s AND event_id = %s", [number_of_seats, user_id, event[5]])
-
+                cursor.execute(
+                    "UPDATE booking SET number_of_seats = number_of_seats + %s WHERE user_id = %s AND event_id = %s",
+                    [number_of_seats, user_id, event[5]])
 
             cursor.execute("UPDATE events SET max_capacity = max_capacity - %s WHERE event_id = %s",
                            [number_of_seats, event[5]])
             cursor.execute("INSERT INTO transactions(user_id, event_id, time_of_transaction) VALUES(%s,%s,%s)",
                            [user_id, event[5], time])
-            cursor.execute("DELETE FROM cart WHERE user_id = %s AND event_id = %s",[user_id, event[5]])
+            cursor.execute("DELETE FROM cart WHERE user_id = %s AND event_id = %s", [user_id, event[5]])
             messages.success(request, message)
             cursor.close()
 
     del request.session['code']
     del request.session['discount']
     return redirect('user:cart_info')
-    # if 
