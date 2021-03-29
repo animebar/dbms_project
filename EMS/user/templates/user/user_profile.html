@@ -90,7 +90,9 @@
                                         </div>
                                         <div>
                                             <span class="heading">10</span>
-                                            <span class="description">Photos</span>
+                                            <a href="{% url 'user:cart_info' %}">
+                                                <span class="description">Cart Info</span>
+                                            </a>
                                         </div>
                                         <div>
                                             <span class="heading">{{transactions}}</span>
@@ -256,7 +258,6 @@
                                         <label></label>
                                         <input rows="4" class="form-control form-control-alternative"
                                             placeholder="A few words about you ..." value="{{about}}" name="about">
-                                        </input>
                                     </div>
                                 </div>
                             </form>

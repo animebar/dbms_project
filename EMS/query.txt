@@ -1,6 +1,8 @@
 use djangodatabase;
 DROP TABLE IF EXISTS tags;
 DROP TABLE IF EXISTS booking; 
+DROP TABLE IF EXISTS reviews;
+DROP TABLE IF EXISTS cart;
 DROP TABLE IF EXISTS transactions;
 DROP TABLE IF EXISTS events;
 DROP TABLE IF EXISTS venue;
@@ -99,6 +101,25 @@ CREATE TABLE tags(
 
 
 
+CREATE TABLE reviews (
+	user_id int,
+    event_id int,
+    review varchar(300),
+    PRIMARY KEY(user_id, event_id),
+    FOREIGN KEY(user_id) REFERENCES user(user_id),
+	FOREIGN KEY(event_id) REFERENCES events(event_id)
+
+);
+
+CREATE TABLE cart(
+	user_id int, 
+    event_id int,
+    seat_count int default 0,
+    PRIMARY KEY(user_id, event_id),
+    FOREIGN KEY(user_id) REFERENCES user(user_id),
+    FOREIGN KEY(event_id) REFERENCES events(event_id)
+);
+
 CREATE TABLE transactions(
     user_id INT,
     event_id INT,
@@ -107,3 +128,4 @@ CREATE TABLE transactions(
     FOREIGN KEY (user_id) REFERENCES user(user_id),
     FOREIGN KEY (event_id) REFERENCES events(event_id)
 );  
+
