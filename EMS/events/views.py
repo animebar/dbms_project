@@ -9,7 +9,7 @@ from django.urls import reverse
 
 
 def view_event(request, id):
-    all_tags=[]
+    all_tags = []
     with connection.cursor() as cursor:
         cursor.execute("SELECT tag_description from tags WHERE event_id = %s", [id])
         row = cursor.fetchall()
@@ -17,12 +17,11 @@ def view_event(request, id):
             all_tags.append(str(r))
 
     for i in range(len(all_tags)):
-        # print(all_tags[i])
-        all_tags[i]=all_tags[i].strip('(')
-        all_tags[i]=all_tags[i].strip(')')
-        all_tags[i]=all_tags[i].strip(',')
-        s="'"
-        all_tags[i]=all_tags[i].strip(s)
+        all_tags[i] = all_tags[i].strip('(')
+        all_tags[i] = all_tags[i].strip(')')
+        all_tags[i] = all_tags[i].strip(',')
+        s = "'"
+        all_tags[i] = all_tags[i].strip(s)
     event_ids = set()
     for t in all_tags:
         with connection.cursor() as cursor:
@@ -33,10 +32,11 @@ def view_event(request, id):
             s = s.strip('(')
             s = s.strip(')')
             s = s.strip(',')
-            k="'"
+            k = "'"
             s = s.strip(k)
             event_ids.add(s)
-    event_ids.remove(str(id))
+    if str(id) in event_ids:
+        event_ids.remove(str(id))
     extra_event_descs = []
     extra_event_names = []
     extra_event_ids = []
@@ -52,7 +52,7 @@ def view_event(request, id):
     with connection.cursor() as cursor:
         cursor.execute("SELECT * FROM events WHERE event_id = %s", [id])
         row = cursor.fetchone()
-        cursor.execute("SELECT * FROM reviews WHERE event_id = %s limit 2", [id])
+        cursor.execute("SELECT distinct(user_id), event_id, review FROM reviews WHERE event_id = %s limit 2", [id])
         reviews = cursor.fetchall()
 
         if 'user_id' in request.session:
@@ -78,7 +78,6 @@ def view_event(request, id):
                 name = cursor.fetchone()[0]
                 comment = review[2]
                 processed_review.append((name, comment))
-
     event_name = row[2]
     host_id = row[1]
     description = row[8]
@@ -89,13 +88,9 @@ def view_event(request, id):
     if 'user_id' in request.session:
         log_in = True
 
-        
     extra_events = []
     for i in range(len(extra_event_names)):
-        temp = []
-        temp.append(extra_event_names[i])
-        temp.append(extra_event_descs[i])
-        temp.append(extra_event_ids[i])
+        temp = [extra_event_names[i], extra_event_descs[i], extra_event_ids[i]]
         extra_events.append(temp)
 
     context = {
@@ -109,9 +104,9 @@ def view_event(request, id):
         'event_date': event_date,
         'id': id,
         'reviews_count': reviews_count,
-        'reviews': processed_review
+        'reviews': processed_review,
         'all_tags': all_tags,
-        'extra_event' : extra_events
+        'extra_event': extra_events
 
     }
     return render(request, 'events/event.html', context)
@@ -128,7 +123,7 @@ def host_event(request):
             end_time = request.POST["event_end_time"]
             venue_info = request.POST["event_venue"]  # string
 
-            all_tags= request.POST["event_tags"]
+            all_tags = request.POST["event_tags"]
             tags = all_tags.split()
 
             venue_name = ""
@@ -157,18 +152,19 @@ def host_event(request):
             cost = request.POST['event_cost']
             cursor = connections['default'].cursor()
 
-            cursor.execute("INSERT INTO events(host_id, event_name, time_stamp,start_time, end_time,venue_id,max_capacity,description,cost)  VALUES (%s, %s, %s,%s,%s,%s,%s,%s,%s)",
-                           [host_id, event_name, time_stamp, start_time, end_time, venue_id, capacity, description, cost])
+            cursor.execute(
+                "INSERT INTO events(host_id, event_name, time_stamp,start_time, end_time,venue_id,max_capacity,description,cost)  VALUES (%s, %s, %s,%s,%s,%s,%s,%s,%s)",
+                [host_id, event_name, time_stamp, start_time, end_time, venue_id, capacity, description, cost])
             with connection.cursor() as cursor:
-                cursor.execute("SELECT event_id FROM events WHERE host_id = %s order by event_id desc", 
-                [host_id])
+                cursor.execute("SELECT event_id FROM events WHERE host_id = %s order by event_id desc",
+                               [host_id])
                 row = cursor.fetchone()
                 event_id = row[0]
             for tag in tags:
                 cursor = connections['default'].cursor()
                 cursor.execute("INSERT INTO tags(event_id, tag_description)  VALUES (%s, %s)",
-                [event_id,tag])
-            messages.success(request,f'Your event has been successfully created')
+                               [event_id, tag])
+            messages.success(request, f'Your event has been successfully created')
             return redirect('home:EMS-home')
 
         else:
@@ -217,10 +213,7 @@ def host_event(request):
                     venue_capacity[i] = venue_capacity[i].strip(s)
                 venue_details = []
                 for i in range(len(venue_names)):
-                    temp = []
-                    temp.append(venue_names[i])
-                    temp.append(venue_street[i])
-                    temp.append(venue_capacity[i])
+                    temp = [venue_names[i], venue_street[i], venue_capacity[i]]
                     venue_details.append(temp)
                 context = {
                     'first_name': first_name,
@@ -231,25 +224,24 @@ def host_event(request):
 
 
 def book_event(request, id):
-
     if 'user_id' in request.session:
         if request.method == 'POST':
             is_yes = request.POST['btn']
             if is_yes == "CONFIRM!":
-                
+
                 user_id = request.session['user_id']
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "SELECT * from user WHERE user_id = %s", [request.session['user_id']])
+                        "SELECT * FROM user WHERE user_id = %s", [request.session['user_id']])
                     row = cursor.fetchone()
                 wallet_amount = row[8]
                 number_of_seats = request.POST['seats']
-  
+
                 time = datetime.now()
 
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "SELECT * from events WHERE event_id = %s", [id])
+                        "SELECT * FROM events WHERE event_id = %s", [id])
                     row = cursor.fetchone()
                 cost = row[10]
                 seats_left = row[7]
@@ -263,20 +255,25 @@ def book_event(request, id):
 
                 if wallet_amount < transaction_amount:
                     messages.error(
-                        request, f'You donot have enough money. Please add credit before booking')
+                        request, f'You do not have enough money. Please add credit before booking')
                     return redirect('events:view_event', id)
 
                 else:
                     cursor = connections['default'].cursor()
 
-                    cursor.execute("UPDATE user SET wallet_amount = wallet_amount - %s WHERE user_id = %s" ,[transaction_amount, user_id])
-                    cursor.execute("INSERT INTO booking(user_id, event_id,number_of_seats) VALUES(%s,%s,%s)", [user_id, id, number_of_seats])
-                    cursor.execute("UPDATE events SET max_capacity = max_capacity - %s WHERE event_id = %s" ,[number_of_seats, id])
-                    cursor.execute("INSERT INTO transactions(user_id, event_id, time_of_transaction) VALUES(%s,%s,%s)", [user_id, id, time])
+                    cursor.execute("UPDATE user SET wallet_amount = wallet_amount - %s WHERE user_id = %s",
+                                   [transaction_amount, user_id])
+                    cursor.execute("INSERT INTO booking(user_id, event_id,number_of_seats) VALUES(%s,%s,%s)",
+                                   [user_id, id, number_of_seats])
+                    cursor.execute("UPDATE events SET max_capacity = max_capacity - %s WHERE event_id = %s",
+                                   [number_of_seats, id])
+                    cursor.execute("INSERT INTO transactions(user_id, event_id, time_of_transaction) VALUES(%s,%s,%s)",
+                                   [user_id, id, time])
                     cursor.execute(
-                        "UPDATE user SET wallet_amount = wallet_amount - %s WHERE user_id = %s", [transaction_amount, user_id])
+                        "UPDATE user SET wallet_amount = wallet_amount - %s WHERE user_id = %s",
+                        [transaction_amount, user_id])
                     cursor.execute("INSERT INTO booking(user_id, event_id,number_of_seats) VALUES(%s,%s,%s)", [
-                                   user_id, id, number_of_seats])
+                        user_id, id, number_of_seats])
                     cursor.execute(
                         "UPDATE events SET max_capacity = max_capacity - %s WHERE event_id = %s", [number_of_seats, id])
 
@@ -318,7 +315,6 @@ def add_venue(request):
             [request.session["user_id"], name, capacity, flag, street, state, pin])
 
     return render(request, 'events/add_venue.html')
-
 
 
 def add_review(request, id):
@@ -377,13 +373,45 @@ def remove_cart(request, id):
     return redirect('events:view_event', id)
 
 
+def del_cart(request, id):
+    if 'user_id' not in request.session:
+        messages.error(request, f'You Need to be signed for removing into the cart')
+        return redirect('events:view_event', id)
+    cursor = connections['default'].cursor()
+    cursor.execute(
+        "DELETE FROM cart WHERE user_id = %s AND event_id = %s",
+        [request.session["user_id"], id])
+    return redirect('user:cart_info')
+
+
 def insert_cart(request, id):
     if 'user_id' not in request.session:
         messages.error(request, f'You Need to be signed for adding into the cart')
         return redirect('events:view_event', id)
     cursor = connections['default'].cursor()
     cursor.execute(
-        "INSERT INTO cart (user_id, event_id) VALUES (%s, %s)",
-        [request.session["user_id"], id])
+        "INSERT INTO cart (user_id, event_id) VALUES (%s, %s)", [request.session["user_id"], id])
     return redirect('events:view_event', id)
 
+
+def increase_cart(request, id):
+    print("here increase")
+    if 'user_id' not in request.session:
+        messages.error(request, f'You Need to be signed for removing into the cart')
+        return redirect('home:EMS-home')
+    cursor = connections['default'].cursor()
+    cursor.execute(
+        "UPDATE cart SET seat_count= seat_count + 1  WHERE user_id=%s AND event_id=%s",
+        [request.session["user_id"], id])
+    return redirect('user:cart_info')
+
+
+def decrease_cart(request, id):
+    if 'user_id' not in request.session:
+        messages.error(request, f'You Need to be signed for removing into the cart')
+        return redirect('home:EMS-home')
+    cursor = connections['default'].cursor()
+    cursor.execute(
+        "UPDATE cart SET seat_count= seat_count - 1  WHERE user_id=%s AND event_id=%s AND seat_count > 0",
+        [request.session["user_id"], id])
+    return redirect('user:cart_info')

@@ -114,13 +114,11 @@ CREATE TABLE reviews (
 CREATE TABLE cart(
 	user_id int, 
     event_id int,
+    seat_count int default 0,
     PRIMARY KEY(user_id, event_id),
     FOREIGN KEY(user_id) REFERENCES user(user_id),
     FOREIGN KEY(event_id) REFERENCES events(event_id)
 );
-
-
-
 
 CREATE TABLE transactions(
     user_id INT,

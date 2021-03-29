@@ -91,10 +91,11 @@ def profile(request):
             row = cursor.fetchone()
             cursor.execute("SELECT year(DOB) from user WHERE user_id = %s", [request.session['user_id']])
             y = cursor.fetchone()
-            cursor.execute("SELECT account_number, IFSC from account_details WHERE user_id = %s", [request.session['user_id']])
+            cursor.execute("SELECT account_number, IFSC from account_details WHERE user_id = %s",
+                           [request.session['user_id']])
             raw_account_details = cursor.fetchall()
         age = datetime.datetime.now().year - y[0]
-        account_details = [] #
+        account_details = []  #
 
         with connection.cursor() as cursor:
             cursor.execute("SELECT * FROM transactions WHERE user_id = %s", [request.session['user_id']])
@@ -119,13 +120,13 @@ def profile(request):
             'wallet_amount': row[8],
             'age': age,
             'account_details': account_details,
-            'transactions':transactions,
+            'transactions': transactions,
         }
         return render(request, 'user/user_profile.html', context)
     return redirect('user:sign-in')
 
 
-def view_profile(request,id):
+def view_profile(request, id):
     log_in = False
     if 'user_id' in request.session:
         log_in = True
@@ -133,7 +134,7 @@ def view_profile(request,id):
     with connection.cursor() as cursor:
         cursor.execute("SELECT * from user WHERE user_id = %s", [id])
         row = cursor.fetchone()
-        cursor.execute("SELECT year(DOB) from user WHERE user_id = %s",[id])
+        cursor.execute("SELECT year(DOB) from user WHERE user_id = %s", [id])
         y = cursor.fetchone()
     age = datetime.datetime.now().year - y[0]
     context = {
@@ -150,6 +151,7 @@ def view_profile(request,id):
     }
     return render(request, 'user/view_profile.html', context)
 
+
 def add_money(request):
     if 'user_id' not in request.session:
         messages.error(request, f'Need to Log in First')
@@ -157,7 +159,8 @@ def add_money(request):
     if request.method == "POST":
         amount = request.POST["amount"]
         cursor = connections['default'].cursor()
-        cursor.execute("UPDATE user SET wallet_amount = wallet_amount + %s WHERE user_id = %s", [amount, request.session["user_id"]])
+        cursor.execute("UPDATE user SET wallet_amount = wallet_amount + %s WHERE user_id = %s",
+                       [amount, request.session["user_id"]])
     return redirect('user:profile')
 
 
@@ -177,16 +180,37 @@ def view_transactions(request):
         with connection.cursor() as cursor:
             cursor.execute("SELECT * FROM events WHERE event_id = %s", [event_id])
             row_i = cursor.fetchone()
-            event_i = []
-            event_i.append(event_id) #event id
-            event_i.append(row_i[2]) #event name
-            event_i.append(row_i[8]) #event description
-            event_i.append(row_i[3]) #event start time
-            event_i.append(row[i][2]) # time of booking 
+            event_i = [event_id, row_i[2], row_i[8], row_i[3], row[i][2]]
             transactions_.append(event_i)
 
     context = {
-        'log_in' :True,
+        'log_in': True,
         'transactions': transactions_,
     }
     return render(request, 'user/transactions.html', context)
+
+
+def cart_info(request):
+    if 'user_id' not in request.session:
+        messages.error(request, f'Sign in to view your cart')
+        return redirect('user:sign-in')
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT * FROM cart WHERE user_id = %s", [request.session["user_id"]])
+        cart_details = cursor.fetchall()
+
+        processed_cart = []
+        total_cost = 0
+        total_count = 0
+        for cart in cart_details:
+            cursor.execute("SELECT event_name, cost, description FROM events WHERE event_id=%s", [cart[1]])
+            event = cursor.fetchone()
+            processed_cart.append(
+                (event[0], event[1], cart[2], event[1] * cart[2], event[2][:10], cart[1]))  # name, cost, seat_count, total_per_event, description[:10],
+            print((event[0], event[1], cart[2], event[1] * cart[2], event[2][:10], cart[1]))
+            total_cost = total_cost + event[1] * cart[2]
+        context = {
+            'cart_details': processed_cart,
+            'total_cost': total_cost,
+            'total_count': len(processed_cart)
+        }
+    return render(request, 'user/cart.html', context)
