@@ -421,7 +421,7 @@ def increase_cart(request, id):
     return redirect('user:cart_info')
 
 
-def decrease_cart(request, id):
+def decrease_cart(request,  id):
     if 'user_id' not in request.session:
         messages.error(request, f'You Need to be signed for removing into the cart')
         return redirect('home:EMS-home')

@@ -94,7 +94,7 @@ def profile(request):
 
         with connection.cursor() as cursor:
             cursor.execute("SELECT * FROM cart WHERE user_id = %s", [request.session['user_id']])
-            row = cursor.fetchall();
+            row = cursor.fetchall()
             cart_count = len(row)
             cursor.execute("SELECT * FROM user WHERE user_id = %s", [request.session['user_id']])
             row = cursor.fetchone()
@@ -314,7 +314,6 @@ def Checkout(request):
         discount = request.session['discount']
     discount = discount / 100
     total_cost = 0
-    total_count = 0
     with connection.cursor() as cursor:
 
         for cart in cart_details:
@@ -337,7 +336,6 @@ def Checkout(request):
         return redirect('user:cart_info')
 
     time = datetime.datetime.now()
-    print(len(processed_cart))
     with connection.cursor() as cursor1:
         for event in processed_cart:
             message = 'Your request is booked for event' + event[0]
