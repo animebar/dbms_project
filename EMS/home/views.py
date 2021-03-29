@@ -40,8 +40,13 @@ def home(request):
             row = cursor.fetchone()
             name = row[2]
             wallet_amount = row[6]
+            
+
+        log_in = False
+        if 'user_id' in request.session:
+            log_in = True
         context = {
-            'log_in': True,
+            'log_in': log_in,
             'name': name,
             'wallet_amount': wallet_amount,
             'events':events
@@ -49,3 +54,64 @@ def home(request):
         return render(request, 'home/home.html', context)
     else:
         return render(request, 'home/home.html',context)
+
+
+
+def search_results(request):
+    if request.method == 'POST':
+        search = request.POST['search']
+        search_text = '%' + search + '%'
+        print(search_text)
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM events WHERE event_name LIKE %s LIMIT 3" ,[search_text])
+            events_ = cursor.fetchall()
+
+        events = []
+        for event in events_:
+            temp = [event[0], event[2], event[8], event[3], event[10]] #id, name, description, time, cost
+            events.append(temp)
+
+
+        search_list = search.split(' ')
+        events_tag_list = []
+        for tag in search_list:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM tags WHERE tag_description LIKE %s LIMIT 3" ,[search_text])
+                events_ = cursor.fetchall()
+            
+            print(events_)
+
+            for event_ in events_:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT * FROM events WHERE event_id = %s" ,[event_[0]])
+                    event = cursor.fetchone()
+                temp = [event[0], event[2], event[8], event[3], event[10]] #id, name, description, time, cost
+                print(temp)
+                if temp in events_tag_list:
+                    continue
+                events_tag_list.append(temp)
+
+        print(len(events_tag_list))
+
+
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM events WHERE description LIKE %s LIMIT 3" ,[search_text])
+            events_ = cursor.fetchall()
+
+        events_description_list = []
+        for event in events_:
+            temp = [event[0], event[2], event[8], event[3], event[10]] #id, name, description, time, cost
+            events_description_list.append(temp)
+
+        log_in = False
+        if 'user_id' in request.session:
+            log_in = True
+        context = {
+            'log_in': log_in,
+            'events': events,
+            'events_tag_list':events_tag_list,
+            'events_description_list':events_description_list,
+        }
+        return render(request, 'home/search_events.html', context)
+
+
