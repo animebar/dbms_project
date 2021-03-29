@@ -4,9 +4,13 @@ from django.contrib import messages
 from django.db import connection, transaction
 from django.db import connections
 from datetime import datetime
-
 from django.urls import reverse
 
+from django.core.files.storage import FileSystemStorage
+from django.conf import settings
+from PIL import Image
+from pathlib import Path
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 def view_event(request, id):
     all_tags = []
@@ -40,6 +44,7 @@ def view_event(request, id):
     extra_event_descs = []
     extra_event_names = []
     extra_event_ids = []
+    extra_event_urls = []
     for event_id in event_ids:
         with connection.cursor() as cursor:
             cursor.execute("SELECT * from events WHERE event_id = %s", [event_id])
@@ -47,6 +52,7 @@ def view_event(request, id):
             extra_event_ids.append(row[0])
             extra_event_descs.append(row[8])
             extra_event_names.append(row[2])
+            extra_event_urls.append(row[9])
     context = {}
     in_cart = False
     with connection.cursor() as cursor:
@@ -77,7 +83,15 @@ def view_event(request, id):
                 cursor.execute("SELECT concat(first_name, ' ', last_name) FROM user WHERE user_id = %s", [review[0]])
                 name = cursor.fetchone()[0]
                 comment = review[2]
-                processed_review.append((name, comment))
+                cursor.execute("SELECT profile_pic_path FROM user WHERE user_id = %s", [review[0]])
+                review_user_path = cursor.fetchone()[0]
+                p = str(BASE_DIR) + review_user_path
+                img = Image.open(p)
+                if img.height != 107 or img.width != 107:
+                    new_img = (107, 107)
+                    img.thumbnail(new_img)
+                    img.save(p)
+                processed_review.append((name, comment,review_user_path))
     event_name = row[2]
     host_id = row[1]
     description = row[8]
@@ -85,12 +99,20 @@ def view_event(request, id):
     max_capacity = row[7]
     event_date = row[3]
     log_in = False
+    event_main_image_path = row[9]
+    p = str(BASE_DIR) + event_main_image_path
+    img = Image.open(p)
+    if img.height != 400 or img.width != 400:
+        new_img = (400, 400)
+        img.thumbnail(new_img)
+        img.save(p)
+
     if 'user_id' in request.session:
         log_in = True
 
     extra_events = []
     for i in range(len(extra_event_names)):
-        temp = [extra_event_names[i], extra_event_descs[i], extra_event_ids[i]]
+        temp = [extra_event_names[i], extra_event_descs[i], extra_event_ids[i],extra_event_urls[i]]
         extra_events.append(temp)
 
     context = {
@@ -106,8 +128,8 @@ def view_event(request, id):
         'reviews_count': reviews_count,
         'reviews': processed_review,
         'all_tags': all_tags,
-        'extra_event': extra_events
-
+        'extra_event': extra_events,
+        'event_main_image_path':event_main_image_path,
     }
     return render(request, 'events/event.html', context)
 
@@ -116,6 +138,23 @@ def host_event(request):
     context = {}
     if 'user_id' in request.session:
         if request.method == 'POST':
+            doc = request.FILES
+            uploaded_image_url="/media/default_event.jpeg"
+            if 'event_img' in request.FILES:
+                doc_name = doc['event_img']
+            else:
+                doc_name = False
+            if doc_name:
+                image = request.FILES['event_img']
+                fs = FileSystemStorage()
+                image_name = fs.save(image.name, image)
+                uploaded_image_url = fs.url(image_name)
+            p = str(BASE_DIR) + uploaded_image_url
+            img = Image.open(p)
+            if img.height != 400 or img.width != 720:
+                new_img = (720, 400)
+                img.thumbnail(new_img)
+                img.save(p)
             host_id = request.session['user_id']
             event_name = request.POST["event_name"]
             time_stamp = request.POST["event_date"]
@@ -153,8 +192,8 @@ def host_event(request):
             cursor = connections['default'].cursor()
 
             cursor.execute(
-                "INSERT INTO events(host_id, event_name, time_stamp,start_time, end_time,venue_id,max_capacity,description,cost)  VALUES (%s, %s, %s,%s,%s,%s,%s,%s,%s)",
-                [host_id, event_name, time_stamp, start_time, end_time, venue_id, capacity, description, cost])
+                "INSERT INTO events(event_image_path,host_id, event_name, time_stamp,start_time, end_time,venue_id,max_capacity,description,cost)  VALUES (%s,%s, %s, %s,%s,%s,%s,%s,%s,%s)",
+                [uploaded_image_url,host_id, event_name, time_stamp, start_time, end_time, venue_id, capacity, description, cost])
             with connection.cursor() as cursor:
                 cursor.execute("SELECT event_id FROM events WHERE host_id = %s order by event_id desc",
                                [host_id])
@@ -173,6 +212,7 @@ def host_event(request):
                 cursor.execute(
                     "SELECT * FROM user WHERE user_id = %s", [request.session['user_id']])
                 row = cursor.fetchone()
+                user_image_path = row[1]
                 first_name = row[3]
                 cursor.execute("SELECT venue_name FROM venue ")
                 row = cursor.fetchall()
@@ -217,7 +257,8 @@ def host_event(request):
                     venue_details.append(temp)
                 context = {
                     'first_name': first_name,
-                    'venue_details': venue_details
+                    'venue_details': venue_details,
+                    'user_image_path':user_image_path
                 }
             return render(request, 'events/host_event.html', context)
     return redirect('user:sign-in')
@@ -306,8 +347,15 @@ def add_venue(request):
         cursor.execute(
             "INSERT INTO venue (owner_id, venue_name, capacity, availability, street, state, zip) VALUE (%s, %s, %s, %s, %s, %s, %s)",
             [request.session["user_id"], name, capacity, flag, street, state, pin])
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT * FROM user WHERE user_id = %s", [request.session['user_id']])
+        row = cursor.fetchone()
+        user_image_path = row[1]
+    context={
+        'user_image_path':user_image_path
+    }
 
-    return render(request, 'events/add_venue.html')
+    return render(request, 'events/add_venue.html',context)
 
 
 def add_discount(request,id):
@@ -431,4 +479,3 @@ def decrease_cart(request,  id):
         [request.session["user_id"], id])
     return redirect('user:cart_info')
 
-    

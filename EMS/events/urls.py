@@ -1,6 +1,8 @@
 from django.urls import path
-
+import os
 from . import views
+
+
 app_name = 'events'
 urlpatterns = [
     path('view/event_id=<id>', views.view_event, name='view_event'),
@@ -16,3 +18,4 @@ urlpatterns = [
     path('decrease/cart/event_id=<id>', views.decrease_cart, name='decrease_cart')
 
 ]
+

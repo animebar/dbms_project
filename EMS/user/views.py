@@ -5,9 +5,15 @@ from django.db import connection, transaction
 from django.db import connections
 from datetime import datetime
 import datetime
+from PIL import Image
+import os
+from pathlib import Path
+from django.conf import settings
+from django.core.files.storage import FileSystemStorage
 # Create your views here.
 from django.http import HttpResponse
 
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 def index(request):
     return HttpResponse("Hello, world. You're at the user index.")
@@ -29,8 +35,9 @@ def signup(request):
             }
             return render(request, 'user/signup.html', context)
         cursor = connections['default'].cursor()
-        cursor.execute("INSERT INTO user(first_name, last_name, email,password, DoB)  VALUES (%s, %s, %s,%s,%s)",
-                       [first_name, last_name, email, password, date_of_birth])
+        path = "/media/default.jpg"
+        cursor.execute("INSERT INTO user(profile_pic_path,first_name, last_name, email,password, DoB)  VALUES (%s,%s, %s, %s,%s,%s)",
+                       [path,first_name, last_name, email, password, date_of_birth])
         return redirect('user:sign-in')
     else:
         return render(request, 'user/signup.html')
@@ -71,6 +78,24 @@ def logout(request):
 def profile(request):
     context = {}
     if 'user_id' in request.session:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * from user WHERE user_id = %s", [request.session['user_id']])
+            row = cursor.fetchone()
+            uploaded_image_url = row[1]
+        doc = request.FILES
+        if 'img' in request.FILES:
+            doc_name = doc['img']
+        else:
+            doc_name = False
+        if request.method == 'POST' and doc_name:
+            image = request.FILES['img']
+            fs = FileSystemStorage()
+            image_name = fs.save(image.name, image)
+            uploaded_image_url = fs.url(image_name)
+            cursor = connections['default'].cursor()
+            cursor.execute(
+                "UPDATE user SET profile_pic_path=%s WHERE user_id = %s",
+                [uploaded_image_url,request.session['user_id']])
         if request.method == 'POST':
             first_name = request.POST["first_name"]
             last_name = request.POST["last_name"]
@@ -125,7 +150,12 @@ def profile(request):
         account_present = False
         if len(account_details):
             account_present = True
-
+        p = str(BASE_DIR) + uploaded_image_url
+        img = Image.open(p)
+        if img.height > 300 or img.width > 300:
+            new_img = (300, 300)
+            img.thumbnail(new_img)
+            img.save(p)
         context = {
             'log_in': True,
             'first_name': row[3],
@@ -140,8 +170,9 @@ def profile(request):
             'zip': row[7],
             'age': age,
             'account_details': account_details,
-            'transactions': transactions,
-            'phone_number': phone_number,
+            'transactions':transactions,
+            'phone_number':phone_number,
+            'uploaded_image_url':uploaded_image_url,
             'account_present': account_present,
             'cart_count': cart_count,
         }
@@ -170,7 +201,8 @@ def view_profile(request, id):
         'street': row[5],
         'state': row[6],
         'zip': row[7],
-        'age': age
+        'age': age,
+        'uploaded_image_url':row[1]
     }
     return render(request, 'user/view_profile.html', context)
 
