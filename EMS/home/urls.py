@@ -5,4 +5,5 @@ from . import views
 app_name = 'home'
 urlpatterns = [
     path('', views.home, name='EMS-home'),
+    path('search/', views.search_results, name = 'search')
 ]
