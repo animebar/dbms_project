@@ -89,17 +89,20 @@ def profile(request):
                 "UPDATE user SET first_name = %s, last_name = %s, email = %s, about = %s, state = %s, zip = %s, street = %s WHERE user_id = %s",
                 [first_name, last_name, email, about, state, postal_address, street, user_id])
             try:
-                cursor.execute("INSERT INTO phone_number(user_id, country_code, phone_number) VALUES(%s,%s,%s)", [user_id, country_code, phone_number, user_id, country_code, phone_number])
+                cursor.execute("INSERT INTO phone_number(user_id, country_code, phone_number) VALUES(%s,%s,%s)",
+                               [user_id, country_code, phone_number, user_id, country_code, phone_number])
             except:
                 None
 
-
         with connection.cursor() as cursor:
-            cursor.execute("SELECT * from user WHERE user_id = %s", [request.session['user_id']])
+            cursor.execute("SELECT * FROM cart WHERE user_id = %s", [request.session['user_id']])
+            row = cursor.fetchall();
+            cart_count = len(row)
+            cursor.execute("SELECT * FROM user WHERE user_id = %s", [request.session['user_id']])
             row = cursor.fetchone()
-            cursor.execute("SELECT year(DOB) from user WHERE user_id = %s", [request.session['user_id']])
+            cursor.execute("SELECT year(DOB) FROM user WHERE user_id = %s", [request.session['user_id']])
             y = cursor.fetchone()
-            cursor.execute("SELECT account_number, IFSC from account_details WHERE user_id = %s",
+            cursor.execute("SELECT account_number, IFSC FROM account_details WHERE user_id = %s",
                            [request.session['user_id']])
             raw_account_details = cursor.fetchall()
         age = datetime.datetime.now().year - y[0]
@@ -113,13 +116,18 @@ def profile(request):
 
         with connection.cursor() as cursor:
             cursor.execute("SELECT * FROM phone_number WHERE user_id = %s", [request.session['user_id']])
-            row_p = cursor.fetchone()        
-        
+            row_p = cursor.fetchone()
+
         phone_number = None
         if row_p:
             phone_number = row_p[2]
         for raw_account in raw_account_details:
             account_details.append(raw_account)
+
+        account_present = False
+        if len(account_details):
+            account_present = True
+
         context = {
             'log_in': True,
             'first_name': row[3],
@@ -132,11 +140,12 @@ def profile(request):
             'street': row[5],
             'state': row[6],
             'zip': row[7],
-            'wallet_amount': row[8],
             'age': age,
             'account_details': account_details,
-            'transactions':transactions,
-            'phone_number':phone_number,
+            'transactions': transactions,
+            'phone_number': phone_number,
+            'account_present': account_present,
+            'cart_count': cart_count,
         }
         return render(request, 'user/user_profile.html', context)
     return redirect('user:sign-in')
@@ -221,7 +230,8 @@ def cart_info(request):
             cursor.execute("SELECT event_name, cost, description FROM events WHERE event_id=%s", [cart[1]])
             event = cursor.fetchone()
             processed_cart.append(
-                (event[0], event[1], cart[2], event[1] * cart[2], event[2][:10], cart[1]))  # name, cost, seat_count, total_per_event, description[:10],
+                (event[0], event[1], cart[2], event[1] * cart[2], event[2][:10],
+                 cart[1]))  # name, cost, seat_count, total_per_event, description[:10],
             print((event[0], event[1], cart[2], event[1] * cart[2], event[2][:10], cart[1]))
             total_cost = total_cost + event[1] * cart[2]
         context = {
@@ -230,3 +240,18 @@ def cart_info(request):
             'total_count': len(processed_cart)
         }
     return render(request, 'user/cart.html', context)
+
+
+def add_account(request):
+    if 'user_id' not in request.session:
+        messages.error(request, f'Need to be signed for adding Bank Account')
+        return redirect('home:EMS-home')
+    if request.method == "POST":
+        account_number = request.POST["account_number"]
+        IFSC = request.POST["IFSC"]
+        print(account_number, IFSC)
+        cursor = connections['default'].cursor()
+        cursor.execute("INSERT INTO account_details (user_id, account_number, IFSC) VALUES (%s, %s, %s)",
+                       [request.session["user_id"], account_number, IFSC])
+        return redirect('user:profile')
+    return render(request, 'user/add_account.html')
