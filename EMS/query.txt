@@ -107,3 +107,5 @@ CREATE TABLE transactions(
     FOREIGN KEY (user_id) REFERENCES user(user_id),
     FOREIGN KEY (event_id) REFERENCES events(event_id)
 );  
+
+

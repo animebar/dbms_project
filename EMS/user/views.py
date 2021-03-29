@@ -81,10 +81,18 @@ def profile(request):
             state = request.POST["state"]
             street = request.POST["street"]
             postal_address = request.POST["zip"]
+            country_code = request.POST["country_code"]
+            phone_number = request.POST["phone_number"]
+            user_id = request.session['user_id']
             cursor = connections['default'].cursor()
             cursor.execute(
-                "UPDATE user SET first_name = %s, last_name = %s, email = %s, about = %s, state = %s, zip = %s, street = %s",
-                [first_name, last_name, email, about, state, postal_address, street])
+                "UPDATE user SET first_name = %s, last_name = %s, email = %s, about = %s, state = %s, zip = %s, street = %s WHERE user_id = %s",
+                [first_name, last_name, email, about, state, postal_address, street, user_id])
+            try:
+                cursor.execute("INSERT INTO phone_number(user_id, country_code, phone_number) VALUES(%s,%s,%s)", [user_id, country_code, phone_number, user_id, country_code, phone_number])
+            except:
+                None
+
 
         with connection.cursor() as cursor:
             cursor.execute("SELECT * from user WHERE user_id = %s", [request.session['user_id']])
@@ -102,6 +110,13 @@ def profile(request):
 
         transactions = len(row_t)
 
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM phone_number WHERE user_id = %s", [request.session['user_id']])
+            row_p = cursor.fetchone()        
+        
+        phone_number = None
+        if row_p:
+            phone_number = row_p[2]
         for raw_account in raw_account_details:
             account_details.append(raw_account)
         context = {
@@ -120,6 +135,7 @@ def profile(request):
             'age': age,
             'account_details': account_details,
             'transactions':transactions,
+            'phone_number':phone_number,
         }
         return render(request, 'user/user_profile.html', context)
     return redirect('user:sign-in')

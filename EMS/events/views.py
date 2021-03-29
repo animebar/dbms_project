@@ -230,3 +230,18 @@ def add_venue(request):
             [request.session["user_id"], name, capacity, flag, street, state, pin])
 
     return render(request, 'events/add_venue.html')
+
+
+def add_discount(request,id):
+    if 'user_id' not in request.session:
+        messages.error(request,f'Please Login First')
+        return redirect('home:EMS-home')
+
+    with connection.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT * from events WHERE event_id = %s", [id])
+                    row = cursor.fetchone()
+    if row == None:
+        messages.error(request, f'Event does not exist! ')
+        return redirect('events:host_event')
+    return render(request, 'events/add_offers.html')
