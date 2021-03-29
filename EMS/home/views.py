@@ -7,7 +7,11 @@ from django.contrib import messages
 from django.db import connection, transaction
 from django.db import connections
 from datetime import datetime
-
+from django.core.files.storage import FileSystemStorage
+from django.conf import settings
+from PIL import Image
+from pathlib import Path
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 def home(request):
     with connection.cursor() as cursor:
@@ -61,15 +65,21 @@ def search_results(request):
     if request.method == 'POST':
         search = request.POST['search']
         search_text = '%' + search + '%'
-        print(search_text)
         with connection.cursor() as cursor:
             cursor.execute("SELECT * FROM events WHERE event_name LIKE %s LIMIT 3" ,[search_text])
             events_ = cursor.fetchall()
 
         events = []
         for event in events_:
-            temp = [event[0], event[2], event[8], event[3], event[10]] #id, name, description, time, cost
+            temp = [event[0], event[2], event[8], event[3], event[10],event[9]] #id, name, description, time, cost
             events.append(temp)
+            url = event[9]
+            p = str(BASE_DIR) + url
+            img = Image.open(p)
+            if img.height != 720 or img.width != 400:
+                new_img = (720, 400)
+                img.thumbnail(new_img)
+                img.save(p)
 
 
         search_list = search.split(' ')
@@ -79,20 +89,22 @@ def search_results(request):
                 cursor.execute("SELECT * FROM tags WHERE tag_description LIKE %s LIMIT 3" ,[search_text])
                 events_ = cursor.fetchall()
             
-            print(events_)
 
             for event_ in events_:
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT * FROM events WHERE event_id = %s" ,[event_[0]])
                     event = cursor.fetchone()
-                temp = [event[0], event[2], event[8], event[3], event[10]] #id, name, description, time, cost
-                print(temp)
+                temp = [event[0], event[2], event[8], event[3], event[10],event[9]] #id, name, description, time, cost
+                url = event[9]
+                p = str(BASE_DIR) + url
+                img = Image.open(p)
+                if img.height != 720 or img.width != 400:
+                    new_img = (720, 400)
+                    img.thumbnail(new_img)
+                    img.save(p)
                 if temp in events_tag_list:
                     continue
                 events_tag_list.append(temp)
-
-        print(len(events_tag_list))
-
 
         with connection.cursor() as cursor:
             cursor.execute("SELECT * FROM events WHERE description LIKE %s LIMIT 3" ,[search_text])
@@ -100,7 +112,14 @@ def search_results(request):
 
         events_description_list = []
         for event in events_:
-            temp = [event[0], event[2], event[8], event[3], event[10]] #id, name, description, time, cost
+            temp = [event[0], event[2], event[8], event[3], event[10], event[9]] #id, name, description, time, cost
+            url = event[9]
+            p = str(BASE_DIR) + url
+            img = Image.open(p)
+            if img.height != 720 or img.width != 400:
+                new_img = (720, 400)
+                img.thumbnail(new_img)
+                img.save(p)
             events_description_list.append(temp)
 
         log_in = False
