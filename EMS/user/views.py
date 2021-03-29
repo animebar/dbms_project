@@ -132,7 +132,6 @@ def profile(request):
             'street': row[5],
             'state': row[6],
             'zip': row[7],
-            'wallet_amount': row[8],
             'age': age,
             'account_details': account_details,
             'transactions':transactions,
