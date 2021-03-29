@@ -201,7 +201,8 @@ def view_profile(request, id):
         'street': row[5],
         'state': row[6],
         'zip': row[7],
-        'age': age
+        'age': age,
+        'uploaded_image_url':row[1]
     }
     return render(request, 'user/view_profile.html', context)
 

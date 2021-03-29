@@ -30,7 +30,7 @@
                             <div class="media align-items-center">
                                 <span class="avatar avatar-sm rounded-circle">
                                     <img alt="Image placeholder"
-                                        src="https://demos.creative-tim.com/argon-dashboard/assets/img/theme/team-5.jpg">
+                                        src="{{ user_image_path }}">
                                 </span>
                                 <div class="media-body ml-2 d-none d-lg-block">
                                     <span class="mb-0 text-sm  font-weight-bold">
@@ -67,7 +67,7 @@
                 <div class="col-xl-8 order-xl-1">
                     <div class="card bg-secondary shadow">
                         <div class="card-body">
-                            <form class="" method="POST" action="{% url 'events:host_event' %}">
+                            <form class="" method="POST" action="{% url 'events:host_event' %}" enctype="multipart/form-data">
                                 {% csrf_token %}
                                 <h6 class="heading-small text-muted mb-4">Host Event</h6>
                                 <div class="card-header bg-white border-0">
@@ -161,6 +161,12 @@
                                                 <input type="text" id="event_tags"
                                                     class="form-control form-control-alternative"
                                                     placeholder="Tags for the event ( space seperated )" name="event_tags">
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label class="form-control-label" for="input-email">Event Image</label>
+                                                <input type="file" id="img" name="event_img" accept="image/*">
                                             </div>
                                         </div>
                                     </div>

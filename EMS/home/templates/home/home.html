@@ -15,7 +15,13 @@
     <div class="flex flex-col items-center m-8">
 
         <div class="w-full bg-white rounded overflow-x-hidden flex snap-x" style="height: 40vh">
-            <div class="snap-start w-full h-full flex items-center justify-center text-white text-4xl font-bold flex-shrink-0 bg-blue-600" id="slide-1">
+            {% for event in events %}
+            <div class="snap-start w-full h-full flex items-center justify-center text-white text-4xl font-bold flex-shrink-0 bg-black relative" id="slide-{{ event.4 }}">
+                <img src="{{ event.3 }}" class="h-full w-full object-cover absolute inset-0 z-10 opacity-25">
+                <h1 class="z-20 text-center"><a href="{% url 'events:view_event' event.2 %}">{{event.0}}</a></h1>
+            </div>
+            {% endfor %}
+            <!-- <div class="snap-start w-full h-full flex items-center justify-center text-white text-4xl font-bold flex-shrink-0 bg-blue-600" id="slide-1">
                 Slide 1
             </div>
             <div class="snap-start w-full h-full flex items-center justify-center text-white text-4xl font-bold flex-shrink-0 bg-green-600" id="slide-2">
@@ -33,7 +39,7 @@
             <div class="snap-start w-full h-full flex items-center justify-center text-white text-4xl font-bold flex-shrink-0 bg-black relative" id="slide-6">
                 <img src="https://images.unsplash.com/photo-1556740738-b6a63e27c4df?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=448&q=80" class="h-full w-full object-cover absolute inset-0 z-10 opacity-25">
                 <h1 class="z-20 text-center">Any kind of content here, images too!</h1>
-            </div>
+            </div> -->
         </div>
 
         <div class="flex mt-8">
@@ -58,7 +64,7 @@
                 <div class="xl:w-1/4 md:w-1/2 p-4">
                     <div class="bg-gray-100 p-6 rounded-lg">
                         <img class="h-40 rounded w-full object-cover object-center mb-6"
-                            src="https://dummyimage.com/720x400" alt="content">
+                            src="{{ event.3 }}" alt="content">
                         <h3 class="text-lg text-gray-900 font-medium title-font mb-4"><a
                                 href="{% url 'events:view_event' event.2%}">{{ event.0 }}</a></h3>
                         <p class="leading-relaxed text-base">{{ event.1 }}</p>
