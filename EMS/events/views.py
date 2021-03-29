@@ -431,4 +431,3 @@ def decrease_cart(request, id):
         [request.session["user_id"], id])
     return redirect('user:cart_info')
 
-    
