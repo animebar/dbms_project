@@ -317,6 +317,21 @@ def add_venue(request):
     return render(request, 'events/add_venue.html')
 
 
+def add_discount(request,id):
+    if 'user_id' not in request.session:
+        messages.error(request,f'Please Login First')
+        return redirect('home:EMS-home')
+
+    with connection.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT * from events WHERE event_id = %s", [id])
+                    row = cursor.fetchone()
+    if row == None:
+        messages.error(request, f'Event does not exist! ')
+        return redirect('events:host_event')
+    return render(request, 'events/add_offers.html')
+
+
 def add_review(request, id):
     if 'user_id' in request.session:
         if request.method == "POST":
@@ -415,3 +430,5 @@ def decrease_cart(request, id):
         "UPDATE cart SET seat_count= seat_count - 1  WHERE user_id=%s AND event_id=%s AND seat_count > 0",
         [request.session["user_id"], id])
     return redirect('user:cart_info')
+
+    

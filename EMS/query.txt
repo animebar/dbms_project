@@ -1,5 +1,6 @@
 use djangodatabase;
 DROP TABLE IF EXISTS tags;
+DROP TABLE IF EXISTS phone_number;
 DROP TABLE IF EXISTS booking; 
 DROP TABLE IF EXISTS reviews;
 DROP TABLE IF EXISTS cart;
@@ -129,3 +130,10 @@ CREATE TABLE transactions(
     FOREIGN KEY (event_id) REFERENCES events(event_id)
 );  
 
+
+CREATE TABLE phone_number(
+    user_id INT,
+    country_code VARCHAR(5),
+    phone_number VARCHAR(11),
+    PRIMARY KEY(user_id, country_code, phone_number)
+);
