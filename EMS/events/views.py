@@ -172,14 +172,14 @@ def host_event(request):
 
             if start_time > end_time:
                 messages.error(request, f'Start time should be lesser than end time')
-                return redirect('events:host_event')
+                return redirect('home:EMS-home')
 
 
             today = date.today()
             print(time_stamp, today)
             if time_stamp < str(today):
                 messages.error(request, f'Event Date should be greater than equal to Current Date')
-                return  redirect('events:host_event')
+                return  redirect('home:EMS-home')
 
             all_tags = request.POST["event_tags"]
             tags = all_tags.split()
