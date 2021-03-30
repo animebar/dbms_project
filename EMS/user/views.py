@@ -4,6 +4,8 @@ from django.contrib import messages
 from django.db import connection, transaction
 from django.db import connections
 from datetime import datetime
+from datetime import date
+
 import datetime
 from PIL import Image
 import os
@@ -95,7 +97,7 @@ def profile(request):
             cursor = connections['default'].cursor()
             cursor.execute(
                 "UPDATE user SET profile_pic_path=%s WHERE user_id = %s",
-                [uploaded_image_url,request.session['user_id']])
+                [uploaded_image_url, request.session['user_id']])
         if request.method == 'POST':
             first_name = request.POST["first_name"]
             last_name = request.POST["last_name"]
@@ -113,9 +115,9 @@ def profile(request):
                 [first_name, last_name, email, about, state, postal_address, street, user_id])
             try:
                 cursor.execute("INSERT INTO phone_number(user_id, country_code, phone_number) VALUES(%s,%s,%s)",
-                               [user_id, country_code, phone_number, user_id, country_code, phone_number])
+                               [user_id, country_code, phone_number])
             except:
-                None
+                pass
 
         with connection.cursor() as cursor:
             cursor.execute("SELECT * FROM cart WHERE user_id = %s", [request.session['user_id']])
@@ -142,8 +144,10 @@ def profile(request):
             row_p = cursor.fetchone()
 
         phone_number = None
+        country_code = None
         if row_p:
             phone_number = row_p[2]
+            country_code = row_p[1]
         for raw_account in raw_account_details:
             account_details.append(raw_account)
 
@@ -170,11 +174,12 @@ def profile(request):
             'zip': row[7],
             'age': age,
             'account_details': account_details,
-            'transactions':transactions,
-            'phone_number':phone_number,
-            'uploaded_image_url':uploaded_image_url,
+            'transactions': transactions,
+            'phone_number': phone_number,
+            'uploaded_image_url': uploaded_image_url,
             'account_present': account_present,
             'cart_count': cart_count,
+            'country_code': country_code,
         }
         return render(request, 'user/user_profile.html', context)
     return redirect('user:sign-in')
@@ -246,11 +251,12 @@ def view_transactions(request):
 
 
 def cart_info(request):
+    today = str(date.today())
     if 'user_id' not in request.session:
         messages.error(request, f'Sign in to view your cart')
         return redirect('user:sign-in')
     with connection.cursor() as cursor:
-        cursor.execute("SELECT * FROM cart WHERE user_id = %s", [request.session["user_id"]])
+        cursor.execute("SELECT cart.* FROM cart, events WHERE user_id = %s AND cart.event_id = events.event_id AND events.time_stamp >= %s", [request.session["user_id"], today])
         cart_details = cursor.fetchall()
         promo_code = None
         if 'code' in request.session:
@@ -335,9 +341,9 @@ def Checkout(request):
     if 'user_id' not in request.session:
         messages.error(request, f'Sign in to view your cart')
         return redirect('user:sign-in')
-
+    today = str(date.today())
     with connection.cursor() as cursor:
-        cursor.execute("SELECT * FROM cart WHERE user_id = %s", [request.session["user_id"]])
+        cursor.execute("SELECT cart.* FROM cart, events WHERE user_id = %s AND cart.event_id = events.event_id AND events.time_stamp >= %s", [request.session["user_id"], today])
         cart_details = cursor.fetchall()
 
     processed_cart = []
@@ -364,7 +370,7 @@ def Checkout(request):
         user = cursor.fetchone()
     wallet_amount = user[8]
     if wallet_amount < total_cost:
-        messages.error(request, f'You donot have enough money in the wallet!')
+        messages.error(request, f'You do not have enough money in the wallet!')
         return redirect('user:cart_info')
 
     time = datetime.datetime.now()
@@ -403,6 +409,8 @@ def Checkout(request):
             messages.success(request, message)
             cursor.close()
 
-    del request.session['code']
-    del request.session['discount']
+    if 'code' in request.session:
+        del request.session['code']
+    if 'discount' in request.session:
+        del request.session['discount']
     return redirect('user:cart_info')

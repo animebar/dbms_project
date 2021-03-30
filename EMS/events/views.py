@@ -5,15 +5,20 @@ from django.db import connection, transaction
 from django.db import connections
 from datetime import datetime
 from django.urls import reverse
+from datetime import date
 
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings
 from PIL import Image
 from pathlib import Path
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 def view_event(request, id):
     all_tags = []
+    is_valid = True
+    today = (date.today())
     with connection.cursor() as cursor:
         cursor.execute("SELECT tag_description from tags WHERE event_id = %s", [id])
         row = cursor.fetchall()
@@ -91,13 +96,15 @@ def view_event(request, id):
                     new_img = (107, 107)
                     img.thumbnail(new_img)
                     img.save(p)
-                processed_review.append((name, comment,review_user_path))
+                processed_review.append((name, comment, review_user_path))
     event_name = row[2]
     host_id = row[1]
     description = row[8]
     cost = row[10]
     max_capacity = row[7]
     event_date = row[3]
+    if event_date < today:
+        is_valid = False
     log_in = False
     event_main_image_path = row[9]
     p = str(BASE_DIR) + event_main_image_path
@@ -112,7 +119,7 @@ def view_event(request, id):
 
     extra_events = []
     for i in range(len(extra_event_names)):
-        temp = [extra_event_names[i], extra_event_descs[i], extra_event_ids[i],extra_event_urls[i]]
+        temp = [extra_event_names[i], extra_event_descs[i], extra_event_ids[i], extra_event_urls[i]]
         extra_events.append(temp)
 
     context = {
@@ -129,7 +136,8 @@ def view_event(request, id):
         'reviews': processed_review,
         'all_tags': all_tags,
         'extra_event': extra_events,
-        'event_main_image_path':event_main_image_path,
+        'event_main_image_path': event_main_image_path,
+        'is_valid': is_valid,
     }
     return render(request, 'events/event.html', context)
 
@@ -139,7 +147,7 @@ def host_event(request):
     if 'user_id' in request.session:
         if request.method == 'POST':
             doc = request.FILES
-            uploaded_image_url="/media/default_event.jpeg"
+            uploaded_image_url = "/media/default_event.jpeg"
             if 'event_img' in request.FILES:
                 doc_name = doc['event_img']
             else:
@@ -161,6 +169,17 @@ def host_event(request):
             start_time = request.POST["event_start_time"]
             end_time = request.POST["event_end_time"]
             venue_info = request.POST["event_venue"]  # string
+
+            if start_time > end_time:
+                messages.error(request, f'Start time should be lesser than end time')
+                return redirect('events:host_event')
+
+
+            today = date.today()
+            print(time_stamp, today)
+            if time_stamp < str(today):
+                messages.error(request, f'Event Date should be greater than equal to Current Date')
+                return  redirect('events:host_event')
 
             all_tags = request.POST["event_tags"]
             tags = all_tags.split()
@@ -186,14 +205,20 @@ def host_event(request):
                 row = cursor.fetchone()
                 venue_id = row[0]
 
-            capacity = res[0]
+            capacity = request.POST["event_number_guests"]
+
+            if int(capacity) > res[0]:
+                messages.error(request, f'Number of Guest is Greater than Hall Capacity')
+                return redirect('events:host_event')
+
             description = request.POST['event_description']
             cost = request.POST['event_cost']
             cursor = connections['default'].cursor()
 
             cursor.execute(
                 "INSERT INTO events(event_image_path,host_id, event_name, time_stamp,start_time, end_time,venue_id,max_capacity,description,cost)  VALUES (%s,%s, %s, %s,%s,%s,%s,%s,%s,%s)",
-                [uploaded_image_url,host_id, event_name, time_stamp, start_time, end_time, venue_id, capacity, description, cost])
+                [uploaded_image_url, host_id, event_name, time_stamp, start_time, end_time, venue_id, capacity,
+                 description, cost])
             with connection.cursor() as cursor:
                 cursor.execute("SELECT event_id FROM events WHERE host_id = %s order by event_id desc",
                                [host_id])
@@ -258,7 +283,7 @@ def host_event(request):
                 context = {
                     'first_name': first_name,
                     'venue_details': venue_details,
-                    'user_image_path':user_image_path
+                    'user_image_path': user_image_path
                 }
             return render(request, 'events/host_event.html', context)
     return redirect('user:sign-in')
@@ -351,22 +376,22 @@ def add_venue(request):
         cursor.execute("SELECT * FROM user WHERE user_id = %s", [request.session['user_id']])
         row = cursor.fetchone()
         user_image_path = row[1]
-    context={
-        'user_image_path':user_image_path
+    context = {
+        'user_image_path': user_image_path
     }
 
-    return render(request, 'events/add_venue.html',context)
+    return render(request, 'events/add_venue.html', context)
 
 
-def add_discount(request,id):
+def add_discount(request, id):
     if 'user_id' not in request.session:
-        messages.error(request,f'Please Login First')
+        messages.error(request, f'Please Login First')
         return redirect('home:EMS-home')
 
     with connection.cursor() as cursor:
-                    cursor.execute(
-                        "SELECT * from events WHERE event_id = %s", [id])
-                    row = cursor.fetchone()
+        cursor.execute(
+            "SELECT * from events WHERE event_id = %s", [id])
+        row = cursor.fetchone()
     if row == None:
         messages.error(request, f'Event does not exist! ')
         return redirect('events:host_event')
@@ -469,7 +494,7 @@ def increase_cart(request, id):
     return redirect('user:cart_info')
 
 
-def decrease_cart(request,  id):
+def decrease_cart(request, id):
     if 'user_id' not in request.session:
         messages.error(request, f'You Need to be signed for removing into the cart')
         return redirect('home:EMS-home')
@@ -478,4 +503,3 @@ def decrease_cart(request,  id):
         "UPDATE cart SET seat_count= seat_count - 1  WHERE user_id=%s AND event_id=%s AND seat_count > 0",
         [request.session["user_id"], id])
     return redirect('user:cart_info')
-
